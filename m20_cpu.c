@@ -790,6 +790,16 @@ t_stat multiplication (t_value *result, t_value x, t_value y, int no_round, int 
 
     if (arithmetic_op_debug) fprintf( stderr, "mult: r=%015llo, regRMR=%015llo rexp=%d\n", r, regRMR, rexp );
 
+   if (! no_round) {
+	/* Округление. */
+	if (regRMR & 0400000000000LL) {
+	    r += 1;
+	}
+       if (arithmetic_op_debug) fprintf( stderr, "mult: ROUND_DONE: r=%015llo, regRMR=%015llo rexp=%d\n", r, regRMR, rexp );
+    }
+
+
+
     if (! no_norm && !(r & 0400000000000LL)) {
 	/* Нормализация на один разряд влево. */
 	--rexp;
@@ -801,14 +811,6 @@ t_stat multiplication (t_value *result, t_value x, t_value y, int no_round, int 
 	}
        if (arithmetic_op_debug) fprintf( stderr, "mult: NORM_DONE: r=%015llo, regRMR=%015llo rexp=%d\n", r, regRMR, rexp );
     }
-   if (! no_round) {
-	/* Округление. */
-	if (regRMR & 0400000000000LL) {
-	    r += 1;
-	}
-       if (arithmetic_op_debug) fprintf( stderr, "mult: ROUND_DONE: r=%015llo, regRMR=%015llo rexp=%d\n", r, regRMR, rexp );
-    }
-
     if (arithmetic_op_debug) fprintf( stderr, "mult: r=%015llo, regRMR=%015llo rexp=%d\n", r, regRMR, rexp );
 
     if (r == 0 || rexp < 0) {

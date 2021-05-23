@@ -790,27 +790,54 @@ t_stat multiplication (t_value *result, t_value x, t_value y, int no_round, int 
 
     if (arithmetic_op_debug) fprintf( stderr, "mult: r=%015llo, regRMR=%015llo rexp=%d\n", r, regRMR, rexp );
 
-   if (! no_round) {
-	/* Округление. */
-	if (regRMR & 0400000000000LL) {
-	    r += 1;
+    
+	 if (! no_round) {
+	/* 1-я стадия округления: прибавляем 1 к 35-му разряду мантиссы (старший 8ричн разряд слагаемого 010 =2).
+	В реальной М-20 regRMR с 1 по 35 разряд не является суммирующим и это прибавление делается иначе, в процессе
+	сдвигов при умножении. Однако результат и смысл ровно те же. */
+	
+	regRMR += 0200000000000LL;
+	if (regRMR & BIT37) {
+		r += 1;
+		regRMR &= MANTISSA;
 	}
-       if (arithmetic_op_debug) fprintf( stderr, "mult: ROUND_DONE: r=%015llo, regRMR=%015llo rexp=%d\n", r, regRMR, rexp );
+	//старое округление по Вакуленко (а в сущности по Ляшенко)
+	/*	
+	if (regRMR & 0 4000 0000 0000LL) {
+	    r += 1;
+	} */
+       if (arithmetic_op_debug) fprintf( stderr, "mult: 1st_ROUND_DONE: r=%015llo, regRMR=%015llo rexp=%d\n", r, regRMR, rexp );
     }
-
-
-
-    if (! no_norm && !(r & 0400000000000LL)) {
+	
+	  if (! no_norm && !(r & 0400000000000LL)) {
 	/* Нормализация на один разряд влево. */
+	
 	--rexp;
 	r <<= 1;
 	regRMR <<= 1;
 	if (regRMR & BIT37) {
  	    r |= 1; 
-	    //regRMR &= MANTISSA;
+	    regRMR &= MANTISSA;
 	}
        if (arithmetic_op_debug) fprintf( stderr, "mult: NORM_DONE: r=%015llo, regRMR=%015llo rexp=%d\n", r, regRMR, rexp );
     }
+	else {
+	/* при отсутствии нормализации и включенном режиме округления необходимо произвести 2-ю стадию округления.
+	Прибавлять нужно вновь 1 к 35-му разряду regRMR, но т.к. он в М-20 не является суммирующим (умеющие суммировать
+	разряды начинаются с Др СмЧ, что в эмуляторе применительно к умножению эквивалентно 36-му рязряду regRMR), 
+	нужно посмотреть на 35-й разряд, и если там есть 1, прибавить 1 к 36-му разряду, имея в виду перенос в r 
+    при необходимости. Единица в 35 разряде останется.	*/
+	
+		if (! no_round && (regRMR & 0200000000000LL)) {
+			regRMR += BIT36;			
+			if (regRMR & BIT37) {
+				r += 1;
+				regRMR &= MANTISSA;
+			}
+			if (arithmetic_op_debug) fprintf( stderr, "mult: 2nd_ROUND_DONE: r=%015llo, regRMR=%015llo rexp=%d\n", r, regRMR, rexp );
+		}
+	}
+	
     if (arithmetic_op_debug) fprintf( stderr, "mult: r=%015llo, regRMR=%015llo rexp=%d\n", r, regRMR, rexp );
 
     if (r == 0 || rexp < 0) {

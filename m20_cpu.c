@@ -4,6 +4,7 @@
  *
  * Copyright (c) 2009, Serge Vakulenko
  * Copyright (c) 2014, Dmitry Stefankov
+ * Copyright (c) 2021, Leonid Yadrennikov
  *
  * $Id$
  *
@@ -47,6 +48,9 @@
  *  06-Mar-2015  DVS  Added statistics print on execution break
  *  09-Mar-2015  DVS  Some fixes and corrections for some instructions
  *                    But problems with arithmetic are remained, wee see these on complex tests
+ *  23-May-2021  LOY  Changes in old multiplication algorithm. Now passes almost all multiply examples.
+ *					  Only 3 still fails.
+ *  26-May-2021	 LOY  Shura-Bura multiplication algorithm works. Fails the same 3 tests.
  *
  */
 
@@ -1876,11 +1880,14 @@ t_stat new_arithmetic_square_root (t_value *result, t_value x, int op_code)
  *  Multiply arithmetic operation implementation.
  *  According this book: Shura-Bura,Starkman pp. 77-82
  *  (russian edition, 1962)
+ *  For more straightforward description of the algorithm refer to:
+ *  M.A.Kartsev. Arifmetika cifrovykh mashin. Moscow, 1969. Ch. 4.2.2.
+ *  p.364. 
  */
 t_stat new_arithmetic_mult_op (t_value *result, t_value x, t_value y, int op_code)
 {
-    int beta_round, beta_norm, rr, sign_zz, p, q, sign_x, sign_y, i, sign_sigma_r;
-    t_value t, x1, y1, sigma_r, delta_r, mask_e2r, mask_2r_1, rr_lo, rr_hi, zz;
+    int beta_round, beta_norm, rr, sign_zz, p, q, sign_x, sign_y, i, sign_sigma_r, delta_r; //rc присвоил delta_r int, чтобы не сбивался вывод
+    t_value t, x1, y1, sigma_r, mask_e2r, mask_2r_1, rr_lo, rr_hi, zz, rr_lo_tmp, rr_hi_sign;
     //t_value mask, t2, t1;
     //int rr_shift, j, r_bit;
 
@@ -1910,7 +1917,11 @@ t_stat new_arithmetic_mult_op (t_value *result, t_value x, t_value y, int op_cod
 
    sign_zz = sign_x * sign_y;
    rr = p + q - M20_MANTISSA_SHIFT;
-   sigma_r = (!beta_round)*1;
+   sigma_r = (!beta_round)*0200000000000LL; //1-я стадия округления
+   /*Как объясняется в техописании, после 19 сдвигов эта единица 35-го разряда, складываясь 
+   в процессе умножения с суммой частичных произведений, попадает в 35-й разряд младшего регистра, 
+   что эквивалентно прибавлению 1 к нему. */
+   
 
    mask_e2r = 2;
    mask_2r_1 = 1;
@@ -1949,56 +1960,40 @@ t_stat new_arithmetic_mult_op (t_value *result, t_value x, t_value y, int op_cod
        if (delta_r == 1) t = y1;
        if (delta_r == 2) t = (y1 << 1);
 #endif
-       sigma_r = (sigma_r >> 2) + t;
-       if (i <= 9)  rr_lo = sigma_r;
-       if (i >= 10) rr_hi = sigma_r;
-       if (arithmetic_op_debug) fprintf( stderr, "t=%015llo sigma_r=%015llo rr_lo=%015llo rr_hi=%015llo\n", 
+	   
+	   //заполняем регистры младшего и старшего произведения, выдавливая по 2 бита в младший регистр
+	   sigma_r  += t;	   
+	   rr_lo >>= 2;
+	   /* В реальной М-20 для умножения образуется регистр из СмЧ (36разрядов+Др) и присоединенного к нему
+	   справа Р1 (36разрядов+Др). Т.е. за СмЧ располагается аккурат 38 разрядов, считая два Др-а.
+       В эмуляторе двух дополнительных разрядов нет. Поэтому выдавливание двух разрядов в rr_lo нужно делать не 19,
+	   а 18 раз, равно как и арифметический сдвиг старшего регистра. А вот сдвигов rr_lo так и должно быть 19. */
+	   if (i<19) {
+			rr_lo_tmp = (sigma_r & 03LL) << BITS_36;	//два младших разряда, которые потеряются при сдвиге
+			rr_lo |= rr_lo_tmp;							//младший регистр готов	   
+	   
+			rr_hi_sign = sigma_r & (01LL << 63);				
+			rr_hi_sign |= (rr_hi_sign>> 1);
+			sigma_r >>= 2;
+			sigma_r |= rr_hi_sign;					//выполнили арифметический сдвиг старшего регистра вправо
+			//сдвиг обязательно должен быть арифметический, чтобы не сломалась работа с вычитанием!
+	   }	   
+	   rr_hi = sigma_r;
+
+       if (arithmetic_op_debug) fprintf( stderr, "t=%015llo sigma_r=%015llo rr_lo=%015llo rr_hi=%015llo\n\n", 
                                                   t, sigma_r, rr_lo, rr_hi );
        mask_e2r <<= 2;
        mask_2r_1 <<= 2;
-       if (i == 9) sigma_r = (sigma_r >> BITS_36);
    }
-
-
 
    /* Step 2. Produce final result */
 
    zz = rr_hi;
    if (arithmetic_op_debug) fprintf( stderr, "rr=%d zz=%015llo rr_lo=%015llo rr_hi=%015llo\n", rr, zz, rr_lo, rr_hi );
 
-   if (!beta_round && !beta_norm) {
-        if (arithmetic_op_debug) 
-          fprintf( stderr, "A11: rr=%d zz=%015llo rr_lo=%015llo rr_hi=%015llo\n", rr, zz, rr_lo, rr_hi );
-	/* Округление по 38 разряду. */
-	if (rr_lo & 0200000000000LL) {
-	    rr_lo += 1;
-	    if (rr_lo & 0400000000000LL) {
-	      zz += 1;
-	      rr_lo &= MANTISSA;
-	    }
-	}
-        if (arithmetic_op_debug) 
-          fprintf( stderr, "A12: rr=%d zz=%015llo rr_lo=%015llo rr_hi=%015llo\n", rr, zz, rr_lo, rr_hi );
-   }
-
-   if (!beta_round && beta_norm) {
-        if (arithmetic_op_debug) 
-          fprintf( stderr, "A31: rr=%d zz=%015llo rr_lo=%015llo rr_hi=%015llo\n", rr, zz, rr_lo, rr_hi );
-	/* Округление по 37 разряду. */
-	if (rr_lo & 0400000000000LL) {
-	    zz += 1;
-	}
-        if (arithmetic_op_debug) 
-          fprintf( stderr, "A33: rr=%d zz=%015llo rr_lo=%015llo rr_hi=%015llo\n", rr, zz, rr_lo, rr_hi );
-   }
-   
-   if (arithmetic_op_debug) 
-       fprintf( stderr, "A4: rr=%d zz=%015llo rr_lo=%015llo rr_hi=%015llo\n", rr, zz, rr_lo, rr_hi );
-
-
-   if (!beta_norm && ! (zz & 0400000000000LL)) {
-        /* Округление. */
+   	
 	/* Нормализация на один разряд влево. */
+   if (!beta_norm && ! (zz & 0400000000000LL)) { 
 	--rr;
 	zz <<= 1;
 	rr_lo <<= 1;
@@ -2007,9 +2002,21 @@ t_stat new_arithmetic_mult_op (t_value *result, t_value x, t_value y, int op_cod
 	    rr_lo &= MANTISSA;
 	}
         if (arithmetic_op_debug) 
-          fprintf( stderr, "rr=%d zz=%015llo rr_lo=%015llo rr_hi=%015llo\n", rr, zz, rr_lo, rr_hi );
+          fprintf( stderr, "NORM_DONE: rr=%d zz=%015llo rr_lo=%015llo rr_hi=%015llo\n", rr, zz, rr_lo, rr_hi );
    }
-
+   else {	  
+	/* Доокругление по 38 разряду. См. разъяснения в обычной реализации умножения.*/
+	if ((rr_lo & 0200000000000LL) && !beta_round) {
+		rr_lo += BIT36;
+		if (rr_lo & BIT37) {
+				zz += 1;
+				rr_lo &= MANTISSA;
+		}	    
+	}
+        if (arithmetic_op_debug) 
+          fprintf( stderr, "2nd_ROUND_DONE: rr=%d zz=%015llo rr_lo=%015llo rr_hi=%015llo\n", rr, zz, rr_lo, rr_hi );
+   }
+   
    if (arithmetic_op_debug) 
      fprintf( stderr, "rr=%d zz=%015llo rr_lo=%015llo rr_hi=%015llo\n", rr, zz, rr_lo, rr_hi );
 

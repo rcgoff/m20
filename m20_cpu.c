@@ -1887,7 +1887,8 @@ t_stat new_arithmetic_square_root (t_value *result, t_value x, int op_code)
 t_stat new_arithmetic_mult_op (t_value *result, t_value x, t_value y, int op_code)
 {
     int beta_round, beta_norm, rr, sign_zz, p, q, sign_x, sign_y, i, sign_sigma_r, delta_r; //rc присвоил delta_r int, чтобы не сбивалс€ вывод
-    t_value t, x1, y1, sigma_r, mask_e2r, mask_2r_1, rr_lo, rr_hi, zz, rr_lo_tmp, rr_hi_sign;
+    t_value t, x1, y1, mask_e2r, mask_2r_1, rr_lo, rr_hi, zz, rr_lo_tmp;
+	t_int64 sigma_r; //чтобы сдвиги были арифметические
     //t_value mask, t2, t1;
     //int rr_shift, j, r_bit;
 
@@ -1973,10 +1974,7 @@ t_stat new_arithmetic_mult_op (t_value *result, t_value x, t_value y, int op_cod
 			rr_lo_tmp = (sigma_r & 03LL) << 34;	//два младших разр€да, которые потер€ютс€ при сдвиге
 			rr_lo |= rr_lo_tmp;							//младший регистр готов	   
 	   
-			rr_hi_sign = sigma_r & (01LL << 63);				
-			rr_hi_sign |= (rr_hi_sign>> 1);
-			sigma_r >>= 2;
-			sigma_r |= rr_hi_sign;					//выполнили арифметический сдвиг старшего регистра вправо
+			sigma_r >>= 2;			
 			//сдвиг об€зательно должен быть арифметический, чтобы не сломалась работа с вычитанием!
 	   }	   
 	   rr_hi = sigma_r;

@@ -53,6 +53,7 @@
  *  26-May-2021	 LOY  Shura-Bura multiplication algorithm works. Fails the same 3 tests.
  *  27-May-2021  LOY  Shura-Bura multiplication simplified.
  *  28-May-2021  LOY  Shura-Bura multiplication simplified a bit more.
+ *  30-May-2021  LOY  Shura-Bura addition passed all tests except 1 (highly likely erroneous one).
  *
  */
 
@@ -1493,7 +1494,7 @@ static int  get_number_sign( t_value num )
 
 static int  is_norm_zero( t_value num )
 {
-    if ((num & SIGN) && ((num & MANTISSA) == 0) && ((num & EXPONENT) == 0)) 
+    if ( ((num & SIGN) == 0) && ((num & MANTISSA) == 0) && ((num & EXPONENT) == 0))
         return 1;
     else
         return 0;
@@ -1533,6 +1534,7 @@ t_stat  new_arithmetic_op( t_value * result, t_value x, t_value y, int op_code )
    int u, u1, sigma, sigma1, p, q, beta_round, beta_norm, rr_shift;
    int sign1, sign2, sign_x, sign_y, sign_z, v, v1, v2, delta, delta1, ro;
    t_value x1,y1, xx1, yy1, z, t, mask;
+   //t_value yy_high,z_high;
 
    if (result == NULL) return STOP_INVARG;
 
@@ -1659,7 +1661,32 @@ t_stat  new_arithmetic_op( t_value * result, t_value x, t_value y, int op_code )
    //z = xx1 + yy1;
    if (sigma == 0) z=xx1 + yy1;
    if (sigma == 1) z=xx1 - yy1;
+  
+   /*
+   if (sigma ==1) {
+	   //вычитание производится в обратном коде, а не в дополнительном!
+	   //yy1=~yy1;   //rc так нельзя делать, потому что yy1 дальше используется в t
+	   yy_high=(~yy1&(1LL<<63));
+	    if (arithmetic_op_debug) fprintf( stderr, "SUB: ~yy1=%015llo yy_high=%015llo\n", ~yy1, yy_high );
+	   z=xx1+~yy1;
+	   z_high=(z&(1LL<<63));
+	    if (arithmetic_op_debug) fprintf( stderr, "SUB: z_high=%015llo\n", z_high );
+	   //циклический перенос (перенос из старшего разряда ловим по изменению старшего бита)
+	   if ((yy_high^z_high) !=0 ) z+=1;
+   }
+   */
+   
+   
+   
+   
+   
+   
    if (arithmetic_op_debug) fprintf( stderr, "z=%015llo\n", z );
+        // rc нам нужен модуль. Делаем получение полож. числа из отрицательного в целочисленном типе
+            if(z& (1LL<<63)) z=~z+1;
+	//		if(z& (1LL<<63)) z=~z;
+			
+	        if (arithmetic_op_debug) fprintf( stderr, "after negate z=%015llo\n", z );
    z &= (MANTISSA|BIT37|BIT38);
    if (arithmetic_op_debug) fprintf( stderr, "z=%015llo\n", z );
 
@@ -1668,7 +1695,7 @@ t_stat  new_arithmetic_op( t_value * result, t_value x, t_value y, int op_code )
    if (sigma1 == 1) {
      sign_z = 1;
      if (sigma == 0) t=xx1 + yy1;
-     if (sigma == 1) t=xx1 - yy1;
+	 if (sigma == 1) t=xx1 - yy1;
      if (t & SIGN) sign_z = -1;
      sign_z = -sign_z;
      if (arithmetic_op_debug) fprintf( stderr, "SIGMA1==1: sign_z=%d, t=%015llo\n", sign_z, t );
@@ -1678,15 +1705,16 @@ t_stat  new_arithmetic_op( t_value * result, t_value x, t_value y, int op_code )
      sign_z = 1;
      if (sigma == 0) t=xx1 + yy1;
      if (sigma == 1) t=xx1 - yy1;
-     if (t & SIGN) sign_z = -1;
+	 if (t & SIGN) sign_z = -1;
      if (arithmetic_op_debug) fprintf( stderr, "SIGMA1==0: sign_z=%d, t=%015llo\n", sign_z, t );
    }
 
-
+   
 
    /* STEP 3. Construction code result */
 
    if (z & BIT38) {
+	   //нормализация вправо при выходе за мантиссу
      z = z + (!beta_round)*1;
      if (arithmetic_op_debug) fprintf( stderr, "A1: z=%015llo rr=%d\n", z, rr );
      rr = rr + 1;
@@ -1701,8 +1729,9 @@ t_stat  new_arithmetic_op( t_value * result, t_value x, t_value y, int op_code )
    //if (beta_norm && (z & BIT37)) {
    // Шура-Бура
    if (beta_norm || (z & BIT37)) {
+	   //если нормализация не нужна
        if (arithmetic_op_debug) fprintf( stderr, "B0: z=%015llo rr=%d\n", z, rr );
-       //z >>= AUX_BIT_SHIFT;
+       //z >>= AUX_BIT_SHIFT;             //сдвиг на Др будет дальше
        //if (z != 0) rr = rr;
        if (arithmetic_op_debug) fprintf( stderr, "B1: z=%015llo rr=%d\n", z, rr );
        if (z == 0) { 
@@ -1719,6 +1748,7 @@ t_stat  new_arithmetic_op( t_value * result, t_value x, t_value y, int op_code )
    //if ((!beta_norm)) {
    // Шура-Бура
    if (!beta_norm && !(z & BIT38) && !(z & BIT37)) {
+	   //нормализация влево
         if (arithmetic_op_debug) fprintf( stderr, "C0: z=%015llo rr=%d\n", z, rr );
          j = BITS_36;
          mask = (t_value)1 << j;

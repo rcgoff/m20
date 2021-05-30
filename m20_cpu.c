@@ -51,6 +51,8 @@
  *  23-May-2021  LOY  Changes in old multiplication algorithm. Now passes almost all multiply examples.
  *					  Only 3 still fails.
  *  26-May-2021	 LOY  Shura-Bura multiplication algorithm works. Fails the same 3 tests.
+ *  27-May-2021  LOY  Shura-Bura multiplication simplified.
+ *  28-May-2021  LOY  Shura-Bura multiplication simplified a bit more.
  *
  */
 
@@ -1338,7 +1340,7 @@ t_stat new_addition_v44 (t_value *result, t_value x, t_value y, int no_round, in
     xexp = x >> BITS_36 & 0177;
     yexp = y >> BITS_36 & 0177;
 
-    if (arithmetic_op_debug) fprintf( stderr, "add: xexp=%d y_exp=%d\n", xexp, yexp );
+    if (arithmetic_op_debug) fprintf( stderr, "add01: xexp=%d y_exp=%d\n", xexp, yexp );
 
     if (yexp > xexp) {
 	/* Assume always that x > y */
@@ -1358,7 +1360,7 @@ t_stat new_addition_v44 (t_value *result, t_value x, t_value y, int no_round, in
     xm1 = (xs * xm) << 1;
     ym1 = (ys * ym) << 1;
 
-    if (arithmetic_op_debug) fprintf( stderr, "add: xm=%015llo ym=%015llo xm1=%018llo ym1=%018llo\n", xm, ym, xm1, ym1 );
+    if (arithmetic_op_debug) fprintf( stderr, "add02: xm=%015llo ym=%015llo xm1=%018llo ym1=%018llo\n", xm, ym, xm1, ym1 );
 
     if (!no_round && (((x ^ y) & SIGN) == 0)) {
         if ((xexp != yexp) && ((xm1 & MANTISSA<<1) && (ym1 & MANTISSA<<1))) {
@@ -1369,7 +1371,7 @@ t_stat new_addition_v44 (t_value *result, t_value x, t_value y, int no_round, in
     }
 
     delta_exp = xexp - yexp;
-    if (arithmetic_op_debug) fprintf( stderr, "add: delta_exp=%d xm1=%018llo ym1=%018llo\n", delta_exp, xm1, ym1 );
+    if (arithmetic_op_debug) fprintf( stderr, "add03: delta_exp=%d xm1=%018llo ym1=%018llo\n", delta_exp, xm1, ym1 );
 
     /* Mantissa alignment */
     if (delta_exp > 0) ym1 >>= (xexp - yexp);
@@ -1377,18 +1379,18 @@ t_stat new_addition_v44 (t_value *result, t_value x, t_value y, int no_round, in
 
     /* Addition */
     rexp = xexp;
-    if (arithmetic_op_debug) fprintf( stderr, "add: rexp=%d xm1=%018llo ym1=%018llo\n", rexp, xm1, ym1 );
+    if (arithmetic_op_debug) fprintf( stderr, "add04: rexp=%d xm1=%018llo ym1=%018llo\n", rexp, xm1, ym1 );
 
     rr = xm1 + ym1;
-    if (arithmetic_op_debug) fprintf( stderr, "add: rr=%018llo\n", rr );
+    if (arithmetic_op_debug) fprintf( stderr, "add05: rr=%018llo\n", rr );
     rs = 1;
     if (rr < 0) {
       rs = -1;
       rr = rr * rs;
     }
-    if (arithmetic_op_debug) fprintf( stderr, "add: rr=%018llo\n", rr );
+    if (arithmetic_op_debug) fprintf( stderr, "add06: rr=%018llo\n", rr );
     r = (rr & (MANTISSA|BIT37|BIT38));
-    if (arithmetic_op_debug) fprintf( stderr, "add: rr=%018llo\n", rr );
+    if (arithmetic_op_debug) fprintf( stderr, "add07: rr=%018llo\n", rr );
 
     r_bit = 0;
     shift_count = 0;
@@ -1886,11 +1888,11 @@ t_stat new_arithmetic_square_root (t_value *result, t_value x, int op_code)
  */
 t_stat new_arithmetic_mult_op (t_value *result, t_value x, t_value y, int op_code)
 {
-    int beta_round, beta_norm, rr, sign_zz, p, q, sign_x, sign_y, i, sign_sigma_r, delta_r; //rc присвоил delta_r int, чтобы не сбивался вывод
-    t_value t, x1, y1, mask_e2r, mask_2r_1, rr_lo, rr_hi, zz, rr_lo_tmp;
-	t_int64 sigma_r; //чтобы сдвиги были арифметические
-    //t_value mask, t2, t1;
-    //int rr_shift, j, r_bit;
+    int beta_round, beta_norm, rr, sign_zz, p, q, sign_x, sign_y, i, sign_sigma_r, delta_r, delta_r_ind; //rc присвоил delta_r int, чтобы не сбивался вывод
+    t_value t, x1, y1, rr_lo, rr_lo_tmp;	
+	t_int64 rr_hi;	//rc для того, чтобы сдвиг был арифметический
+	t_value mask = 3;	
+    int delta_arr[4];	
 
    if (result == NULL) return STOP_INVARG;
 
@@ -1914,116 +1916,102 @@ t_stat new_arithmetic_mult_op (t_value *result, t_value x, t_value y, int op_cod
    if (arithmetic_op_debug) fprintf( stderr, "p=%d, q=%d, x1=%015llo, y1=%015llo\n", p, q, x1, y1 );
 
    /* Step 1. Preliminary production */
-   zz = 0;
-
+   
    sign_zz = sign_x * sign_y;
    rr = p + q - M20_MANTISSA_SHIFT;
-   sigma_r = (!beta_round)*0200000000000LL; //1-я стадия округления
-   /*Как объясняется в техописании, после 19 сдвигов эта единица 35-го разряда, складываясь 
-   в процессе умножения с суммой частичных произведений, попадает в 35-й разряд младшего регистра, 
-   что эквивалентно прибавлению 1 к нему. */
    
-
-   mask_e2r = 2;
-   mask_2r_1 = 1;
-
    rr_lo = 0;
-   rr_hi = 0;
+   rr_hi = (!beta_round)*0200000000000LL; //1-я стадия округления
+   /*Как объясняется в техописании, после 18 сдвигов эта единица 35-го разряда, складываясь 
+   в процессе умножения с суммой частичных произведений, попадает в 35-й разряд младшего регистра, 
+   что эквивалентно прибавлению 1 к нему. */   
+
+   /*массив весов, назначаемых очередной паре разрядов множителя */
+   delta_arr[0]=0;
+   delta_arr[1]=1;
+   delta_arr[2]=2;
+   delta_arr[3]=-1;   
 
    if (arithmetic_op_debug) 
-     fprintf( stderr, "rr=%d sign_zz=%d sigma_r=%015llo mask_e2r=%015llo mask_2r_1=%015llo\n", 
-                       rr, sign_zz, sigma_r, mask_e2r, mask_2r_1 );
+     fprintf( stderr, "rr=%d sign_zz=%d rr_hi=%015llo \n", 
+                       rr, sign_zz, rr_hi );
 
-
-   for( i=1; i<20; i++ ) {
-   //for( i=1; i<16; i++ ) {
-       sign_sigma_r = get_number_sign(sigma_r);
-       if (sign_sigma_r == 1) {
-         if ((!(x1 & mask_e2r)) && (!(x1 & mask_2r_1))) delta_r = 0;
-         if ((!(x1 & mask_e2r)) && (x1 & mask_2r_1)) delta_r = 1;
-         if ((x1 & mask_e2r) && (!(x1 & mask_2r_1))) delta_r = 2;
-         if ((x1 & mask_e2r) && (x1 & mask_2r_1)) delta_r = -1;
-       }
-       if (sign_sigma_r == -1) {
-         if ((!(x1 & mask_e2r)) && (!(x1 & mask_2r_1))) delta_r = 1;
-         if ((!(x1 & mask_e2r)) && (x1 & mask_2r_1)) delta_r = 2;
-         if ((x1 & mask_e2r) && (!(x1 & mask_2r_1))) delta_r = -1;
-         if ((x1 & mask_e2r) && (x1 & mask_2r_1)) delta_r = 0;
-       }
+   for( i=1; i<20; i++ ) {   
+       sign_sigma_r = get_number_sign(rr_hi);
+	   delta_r_ind=(int)(x1&mask);
+	   /*для кода "11" предыдущего разряда, когда выполнялось вычитание, выполняется +1
+	   к весам текущего разряда по mod4, т.е. к текущей паре цифр множителя как бы прибавляется 1 
+       перед их анализом. Иными словами, используется представление 11=100-01	   */
+       if (sign_sigma_r == -1) {	   
+		   delta_r_ind++;
+		   delta_r_ind &= 3;
+	   }
+	   delta_r=delta_arr[delta_r_ind]; 
+		
        if (arithmetic_op_debug) {
-         fprintf( stderr, "i=%d sign_sigma_r=%d delta_r=%d mask_e2r=%015llo mask_2r_1=%015llo\n", 
-                           i, sign_sigma_r, delta_r, mask_e2r, mask_2r_1 );
+         fprintf( stderr, "i=%d sign_sigma_r=%d delta_r=%d \n", 
+                           i, sign_sigma_r, delta_r );
        }
        t = delta_r * y1;
-#if 0
-       if (delta_r == 0) t = 0;
-       if (delta_r == -1) t = (y1 ^ SIGN);
-       if (delta_r == 1) t = y1;
-       if (delta_r == 2) t = (y1 << 1);
-#endif
 	   
-	   //заполняем регистры младшего и старшего произведения, выдавливая по 2 бита в младший регистр
+	   /*заполняем регистры младшего и старшего произведения, выдавливая по 2 бита в младший регистр */
 	   
-	   sigma_r  += t;	   	   
+	   rr_hi  += t;	   	   
 	   /* В реальной М-20 для умножения образуется регистр из СмЧ (36разрядов+Др) и присоединенного к нему
 	   справа Р1 (36разрядов+Др). Т.е. за СмЧ располагается аккурат 38 разрядов, считая два Др-а.
        В эмуляторе двух дополнительных разрядов нет. Поэтому выдавливание двух разрядов в rr_lo нужно делать не 19,
 	   а 18 раз, равно как и арифметический сдвиг старшего регистра.  */
 	   if (i<19) {
 		    rr_lo >>= 2;
-			rr_lo_tmp = (sigma_r & 03LL) << 34;	//два младших разряда, которые потеряются при сдвиге
+			rr_lo_tmp = (rr_hi & 03LL) << 34;	//два младших разряда, которые потеряются при сдвиге. 
+												//сдвиг на 34, т.к. выдавливаний будет 18, а попасть надо в первые 2 разряда rr_lo
 			rr_lo |= rr_lo_tmp;							//младший регистр готов	   
 	   
-			sigma_r >>= 2;			
-			//сдвиг обязательно должен быть арифметический, чтобы не сломалась работа с вычитанием!
+			rr_hi >>= 2;   //сдвиг обязательно должен быть арифметический, чтобы не сломалась работа с вычитанием!
 	   }	   
-	   rr_hi = sigma_r;
-
-       if (arithmetic_op_debug) fprintf( stderr, "t=%015llo sigma_r=%015llo rr_lo=%015llo rr_hi=%015llo\n\n", 
-                                                  t, sigma_r, rr_lo, rr_hi );
-       mask_e2r <<= 2;
-       mask_2r_1 <<= 2;
+	   
+       if (arithmetic_op_debug) fprintf( stderr, "t=%015llo rr_lo=%015llo rr_hi=%015llo\n\n", 
+                                                  t, rr_lo, rr_hi );
+	   x1 >>= 2;
    }
 
    /* Step 2. Produce final result */
 
-   zz = rr_hi;
-   if (arithmetic_op_debug) fprintf( stderr, "rr=%d zz=%015llo rr_lo=%015llo rr_hi=%015llo\n", rr, zz, rr_lo, rr_hi );
-
+      if (arithmetic_op_debug) fprintf( stderr, "rr=%d rr_lo=%015llo rr_hi=%015llo\n", rr, rr_lo, rr_hi );
    	
 	/* Нормализация на один разряд влево. */
-   if (!beta_norm && ! (zz & 0400000000000LL)) { 
+   if (!beta_norm && ! (rr_hi & 0400000000000LL)) { 
 	--rr;
-	zz <<= 1;
+	rr_hi <<= 1;
 	rr_lo <<= 1;
 	if (rr_lo & BIT37) {
-            zz += 1; 
+            rr_hi += 1; 
 	    rr_lo &= MANTISSA;
 	}
         if (arithmetic_op_debug) 
-          fprintf( stderr, "NORM_DONE: rr=%d zz=%015llo rr_lo=%015llo rr_hi=%015llo\n", rr, zz, rr_lo, rr_hi );
+          fprintf( stderr, "NORM_DONE: rr=%d rr_hi=%015llo rr_lo=%015llo rr_hi=%015llo\n", rr, rr_hi, rr_lo, rr_hi );
    }
    else {	  
 	/* Доокругление по 38 разряду. См. разъяснения в обычной реализации умножения.*/
 	if ((rr_lo & 0200000000000LL) && !beta_round) {
 		rr_lo += BIT36;
 		if (rr_lo & BIT37) {
-				zz += 1;
+				rr_hi += 1;
 				rr_lo &= MANTISSA;
 		}	    
 	}
         if (arithmetic_op_debug) 
-          fprintf( stderr, "2nd_ROUND_DONE: rr=%d zz=%015llo rr_lo=%015llo rr_hi=%015llo\n", rr, zz, rr_lo, rr_hi );
+          fprintf( stderr, "2nd_ROUND_DONE: rr=%d rr_hi=%015llo rr_lo=%015llo rr_hi=%015llo\n", rr, rr_hi, rr_lo, rr_hi );
    }
    
    if (arithmetic_op_debug) 
-     fprintf( stderr, "rr=%d zz=%015llo rr_lo=%015llo rr_hi=%015llo\n", rr, zz, rr_lo, rr_hi );
+     fprintf( stderr, "rr=%d rr_hi=%015llo rr_lo=%015llo rr_hi=%015llo\n", rr, rr_hi, rr_lo, rr_hi );
 
-   if ((zz != 0) && (rr > 127)) {
+   if ((rr_hi != 0) && (rr > 127)) {
        return STOP_MULOVF;
    }
 
-   if ((zz == 0) || (rr < 0)) {
+   if ((rr_hi == 0) || (rr < 0)) {
      t = norm_zero(); 
      *result = t;
      if (arithmetic_op_debug) fprintf( stderr, "FINAL ZERO: t=%015llo\n\n", t );
@@ -2036,11 +2024,10 @@ t_stat new_arithmetic_mult_op (t_value *result, t_value x, t_value y, int op_cod
     }
 
    /* Make final result */
-//do_final_result:
    if (arithmetic_op_debug) 
-     fprintf( stderr, "FINAL 1: rr=%d rr_lo=%015llo rr_hi=%015llo zz=%015llo\n", rr, rr_lo, rr_hi, zz );
+     fprintf( stderr, "FINAL 1: rr=%d rr_lo=%015llo rr_hi=%015llo rr_hi=%015llo\n", rr, rr_lo, rr_hi, rr_hi );
 
-   t = zz & MANTISSA;
+   t = rr_hi & MANTISSA;
    t |= ((t_value)rr << BITS_36);
    if (sign_zz < 0) t |= SIGN;
    t |= (x|y) & TAG;
@@ -2050,7 +2037,7 @@ t_stat new_arithmetic_mult_op (t_value *result, t_value x, t_value y, int op_cod
    regRMR |= ((x ^ y) & SIGN) | ((x | y) & TAG);
 
    if (arithmetic_op_debug) 
-     fprintf( stderr, "FINAL 8: rr=%d zz=%015llo, t==%015llo, regRMR=%015llo\n\n", rr, zz, t, regRMR );
+     fprintf( stderr, "FINAL 8: rr=%d rr_hi=%015llo, t==%015llo, regRMR=%015llo\n\n", rr, rr_hi, t, regRMR );
 
    *result = t;
 

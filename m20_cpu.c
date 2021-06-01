@@ -53,7 +53,8 @@
  *  26-May-2021	 LOY  Shura-Bura multiplication algorithm works. Fails the same 3 tests.
  *  27-May-2021  LOY  Shura-Bura multiplication simplified.
  *  28-May-2021  LOY  Shura-Bura multiplication simplified a bit more.
- *  30-May-2021  LOY  Shura-Bura addition passed all tests except 1 (highly likely erroneous one).
+ *  30-May-2021  LOY  Shura-Bura addition passed full "test 6" (if to correct one erroneous exercise)
+ *  01-Jun-2021  LOY  Shura-Bura addition refactored a little: sign determination shortened.
  *
  */
 
@@ -1525,7 +1526,7 @@ t_value max(t_value a,t_value b)
 
 /*
  *  Addition,subtraction,subtraction by module arithmetic operations implementation.
- *  According this book: Shura-Bura,Starkman pp. 70-75
+ *  According to this book: Shura-Bura,Starkman pp. 70-75
  *  (russian edition, 1962)
  */
 t_stat  new_arithmetic_op( t_value * result, t_value x, t_value y, int op_code )
@@ -1533,9 +1534,9 @@ t_stat  new_arithmetic_op( t_value * result, t_value x, t_value y, int op_code )
    int math_op_type = 0, rr, e0, n0, j;
    int u, u1, sigma, sigma1, p, q, beta_round, beta_norm, rr_shift;
    int sign1, sign2, sign_x, sign_y, sign_z, v, v1, v2, delta, delta1, ro;
-   t_value x1,y1, xx1, yy1, z, t, mask;
-   //t_value yy_high,z_high;
-
+   t_value x1,y1, xx1, yy1, mask;
+   t_int64 z;
+   
    if (result == NULL) return STOP_INVARG;
 
    if (arithmetic_op_debug) fprintf( stderr, "op=%02o, x=%015llo, y=%015llo\n", op_code, x, y );
@@ -1658,56 +1659,34 @@ t_stat  new_arithmetic_op( t_value * result, t_value x, t_value y, int op_code )
      if (arithmetic_op_debug) fprintf( stderr, "DELTA>0: xx1=%015llo yy1=%015llo\n", xx1, yy1 );
    }
 
-   //z = xx1 + yy1;
+   
    if (sigma == 0) z=xx1 + yy1;
-   if (sigma == 1) z=xx1 - yy1;
-  
-   /*
-   if (sigma ==1) {
-	   //вычитание производится в обратном коде, а не в дополнительном!
-	   //yy1=~yy1;   //rc так нельзя делать, потому что yy1 дальше используется в t
-	   yy_high=(~yy1&(1LL<<63));
-	    if (arithmetic_op_debug) fprintf( stderr, "SUB: ~yy1=%015llo yy_high=%015llo\n", ~yy1, yy_high );
-	   z=xx1+~yy1;
-	   z_high=(z&(1LL<<63));
-	    if (arithmetic_op_debug) fprintf( stderr, "SUB: z_high=%015llo\n", z_high );
-	   //циклический перенос (перенос из старшего разряда ловим по изменению старшего бита)
-	   if ((yy_high^z_high) !=0 ) z+=1;
+   if (sigma == 1) z=xx1 - yy1; 
+   /*в реальной М-20 вычитание производится в обратном коде, а не в дополнительном, как в Си!
+   С циклическим переносом и без прибавления 1.
+   Но т.к. мы переходим потом вновь к прямым кодам чисел, это не играет роли. */
+   
+   
+   
+   /* get sign of preliminary result*/	
+   sign_z = (z<0) ? -1 : 1;
+   
+   if (sigma1 == 0) {    
+     if (arithmetic_op_debug) fprintf( stderr, "SIGMA1==0: sign_z=%d, z=%015llo\n", sign_z, z );
    }
-   */
-   
-   
-   
-   
-   
-   
-   if (arithmetic_op_debug) fprintf( stderr, "z=%015llo\n", z );
-        // rc нам нужен модуль. Делаем получение полож. числа из отрицательного в целочисленном типе
-            if(z& (1LL<<63)) z=~z+1;
-	//		if(z& (1LL<<63)) z=~z;
-			
-	        if (arithmetic_op_debug) fprintf( stderr, "after negate z=%015llo\n", z );
-   z &= (MANTISSA|BIT37|BIT38);
-   if (arithmetic_op_debug) fprintf( stderr, "z=%015llo\n", z );
-
-
-   /* get sign of preliminary result*/
+      
    if (sigma1 == 1) {
-     sign_z = 1;
-     if (sigma == 0) t=xx1 + yy1;
-	 if (sigma == 1) t=xx1 - yy1;
-     if (t & SIGN) sign_z = -1;
      sign_z = -sign_z;
-     if (arithmetic_op_debug) fprintf( stderr, "SIGMA1==1: sign_z=%d, t=%015llo\n", sign_z, t );
+     if (arithmetic_op_debug) fprintf( stderr, "SIGMA1==1: sign_z=%d, z=%015llo\n", sign_z, z );
    }
-
-   if (sigma1 == 0) {
-     sign_z = 1;
-     if (sigma == 0) t=xx1 + yy1;
-     if (sigma == 1) t=xx1 - yy1;
-	 if (t & SIGN) sign_z = -1;
-     if (arithmetic_op_debug) fprintf( stderr, "SIGMA1==0: sign_z=%d, t=%015llo\n", sign_z, t );
-   }
+  
+     
+  //в дальнейших вычислениях нам нужен модуль z 
+   if (z<0) z=-z;
+			
+   if (arithmetic_op_debug) fprintf( stderr, "after negate z=%015llo\n", z );
+   z &= (MANTISSA|BIT37|BIT38);
+   if (arithmetic_op_debug) fprintf( stderr, "z=%015llo\n", z ); 
 
    
 
@@ -1735,9 +1714,9 @@ t_stat  new_arithmetic_op( t_value * result, t_value x, t_value y, int op_code )
        //if (z != 0) rr = rr;
        if (arithmetic_op_debug) fprintf( stderr, "B1: z=%015llo rr=%d\n", z, rr );
        if (z == 0) { 
-           t = norm_zero(); 
-           *result = t;
-           if (arithmetic_op_debug) fprintf( stderr, "B1A FINAL: t=%015llo\n\n", t );
+           z = norm_zero(); 
+           *result = z;
+           if (arithmetic_op_debug) fprintf( stderr, "B1A FINAL: t=%015llo\n\n", z );
            return SCPE_OK; 
        }
    }
@@ -1760,18 +1739,18 @@ t_stat  new_arithmetic_op( t_value * result, t_value x, t_value y, int op_code )
          rr_shift = BITS_36-j;
          if (arithmetic_op_debug) fprintf( stderr, "C2: m=%015llo j=%d, rr=%d, rr_shift=%d, rr-rr_shift=%d\n", mask, j, rr, rr_shift, rr - rr_shift );
          if ((rr - rr_shift) < 0) {
-            t = norm_zero(); 
-            *result = t;
-            if (arithmetic_op_debug) fprintf( stderr, "C2A FINAL: t=%015llo\n\n", t );
+            z = norm_zero(); 
+            *result = z;
+            if (arithmetic_op_debug) fprintf( stderr, "C2A FINAL: t=%015llo\n\n", z );
             return SCPE_OK; 
          }
          rr = rr - rr_shift;
          z <<= rr_shift; 
          if (arithmetic_op_debug) fprintf( stderr, "C3: rr=%d zz=%015llo\n", rr, z );
          if (z == 0) { 
-            t = norm_zero(); 
-            *result = t;
-            if (arithmetic_op_debug) fprintf( stderr, "C3A FINAL: t=%015llo\n\n", t );
+            z = norm_zero(); 
+            *result = z;
+            if (arithmetic_op_debug) fprintf( stderr, "C3A FINAL: t=%015llo\n\n", z );
             return SCPE_OK; 
          }
    }
@@ -1782,14 +1761,13 @@ t_stat  new_arithmetic_op( t_value * result, t_value x, t_value y, int op_code )
    z &= MANTISSA;
    if (arithmetic_op_debug) fprintf( stderr, "FINAL 1: z=%015llo rr=%d\n", z, rr );
 
-   t = z | ((t_value)rr << BITS_36);
-   //if (sign_z) t |= SIGN;
-   if (sign_z<0) t |= SIGN;
-   t |= (x|y) & TAG;
+   z = z | ((t_value)rr << BITS_36);
+   if (sign_z<0) z |= SIGN;
+   z |= (x|y) & TAG;
 
-   if (arithmetic_op_debug) fprintf( stderr, "FINAL 2: t=%015llo\n\n", t );
+   if (arithmetic_op_debug) fprintf( stderr, "FINAL 2: t=%015llo\n\n", z );
 
-   *result = t;
+   *result = z;
 
    return SCPE_OK;   
 }
@@ -1921,7 +1899,7 @@ t_stat new_arithmetic_mult_op (t_value *result, t_value x, t_value y, int op_cod
     int beta_round, beta_norm, rr, sign_zz, p, q, sign_x, sign_y, i, sign_sigma_r, delta_r, delta_r_ind; //rc присвоил delta_r int, чтобы не сбивался вывод
     t_value t, x1, y1, rr_lo, rr_lo_tmp;	
 	t_int64 rr_hi;	//rc для того, чтобы сдвиг был арифметический
-	t_value mask = 3;	
+	const t_value mask = 3;	
     int delta_arr[4];	
 
    if (result == NULL) return STOP_INVARG;

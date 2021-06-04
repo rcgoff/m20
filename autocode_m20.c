@@ -12,6 +12,8 @@
  *  23-Feb-2015  DVS  Improved implementation
  *  26-Feb-2015  DVS  Added absolute values to parse for coded instructions
  *  28-Feb-2015  DVS  Added sym_values into numeric values (data lines)
+ *  26-Mar-2015  DVS  Minor changes
+ *  01-May-2021  DVS  Fixed a bug with data line parsing (bug found by Leonid Yadrennikov).
  *
  */
 
@@ -765,8 +767,13 @@ t_value  parse_numeric_expression( int j, int n)
     s = parsed_lines_array[j].lexical_word_array[n].lex_word_value;
     //printf( "s: '%s'\n", s );
     if (*s == '=') {
+      double d;
       p = NULL;
-      mcode = ieee_to_m20 (strtod (s+1, &p));
+      //printf( "s+1: '%s'\n", s+1 );
+      d = strtod (s+1, &p);
+      //printf( "d: %f\n", d );
+      mcode = ieee_to_m20(d);
+      //mcode = ieee_to_m20 (strtod (s+1, &p));
       //printf( "mcode: '%015llo', '%s', '%s', %f\n", mcode, s+1, p, strtod (s+1,NULL) );
       return mcode;
     }
@@ -1382,11 +1389,27 @@ void  parse_input_assembly_file( char * filename, PSYM_TABLES  p_sym_tables )
           for( j=k; j<MAX_CHECK_LEXICAL_WORD_NUM; j++) {
             if (parsed_lines_array[i].lexical_word_array[j].lex_word_num > 0)
                 printf( "%d='%s';",j,parsed_lines_array[i].lexical_word_array[j].lex_word_value );
+                res = is_numeric_exp(parsed_lines_array[i].lexical_word_array[j].lex_word_value);
+                printf( "%d='%s'(res=%d);",j,parsed_lines_array[i].lexical_word_array[j].lex_word_value,res );
+                if ((res > 0) && (j > 1)) {
+                   t_value t1;
+                   char s1[16];
+                   this_addr = 0;
+                   s = parsed_lines_array[i].lexical_word_array[j].lex_word_value;
+                   t1 = search_abs_value_per_abs_values_table( s );
+                   if (t1 == 0) this_addr = search_sym_value_per_sym_values_table( s );
+                   else this_addr = (int)t1;
+                   this_addr &= MAX_ADDR_VALUE;
+                   printf("this_addr=%04o;",this_addr);
+                   _snprintf(s1,sizeof(s1)-1, "%04o",this_addr );
+                   strncpy( parsed_lines_array[i].lexical_word_array[j].lex_word_value, s1, 5 );
+                   printf( "%d='%s';",j,parsed_lines_array[i].lexical_word_array[j].lex_word_value );
+                }
           }
           printf( "\n" );
         }
         res = is_numeric_exp(parsed_lines_array[i].lexical_word_array[k].lex_word_value);
-        //printf( "res=%d\n", res );
+        //if (1) printf( "is_num_exp_res=%d (lex_value='%s')\n", res, parsed_lines_array[i].lexical_word_array[k].lex_word_value );
         if (res < 0) {
            fprintf( stderr, "ERROR: wrong data value in line %d (%s)\n", parsed_lines_array[i].line_num,
                              parsed_lines_array[i].lexical_word_array[k].lex_word_value );
@@ -1668,7 +1691,7 @@ void  produce_output_listing_file( char * filename )
       fprintf( fp, "%s\n", subheader );
       fprintf( fp, "\n" );
 
-      fprintf( fp, "Print symbolic names table (%d entries)\n", sym_values_num );
+      fprintf( fp, "Symbolic names table - numerical order - (%d entries)\n", sym_values_num );
       for( i=0; i<sym_values_num; i++ ) {
           fprintf( fp, "%04d: %-32s\t%04o\n", i, sym_values_table[i].sym_name, sym_values_table[i].sym_value );
       }
@@ -1688,7 +1711,7 @@ void  produce_output_listing_file( char * filename )
       fprintf( fp, "%s\n", subheader );
       fprintf( fp, "\n" );
 
-      fprintf( fp, "Print absolute values table (%d entries)\n", abs_values_num ); {
+      fprintf( fp, "Absolute values table - natural order - (%d entries)\n", abs_values_num ); {
       for( i=0; i<abs_values_num; i++ ) 
           fprintf( fp, "%04d: %-32s\t%015llo\n", i, abs_values_table[i].abs_name, abs_values_table[i].abs_value );
       }

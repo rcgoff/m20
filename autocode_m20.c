@@ -1386,11 +1386,12 @@ void  parse_input_assembly_file( char * filename, PSYM_TABLES  p_sym_tables )
         if (parsed_lines_array[i].label_name[0] != '\0') k++;
         if (debug_parsing) {
           printf( "DATA_LINE: line_num=%d: addr=%04o: ", parsed_lines_array[i].line_num, parsed_lines_array[i].location_addr );
+        }
           for( j=k; j<MAX_CHECK_LEXICAL_WORD_NUM; j++) {
             if (parsed_lines_array[i].lexical_word_array[j].lex_word_num > 0)
-                printf( "%d='%s';",j,parsed_lines_array[i].lexical_word_array[j].lex_word_value );
+                if (debug_parsing) printf( "%d='%s';",j,parsed_lines_array[i].lexical_word_array[j].lex_word_value );
                 res = is_numeric_exp(parsed_lines_array[i].lexical_word_array[j].lex_word_value);
-                printf( "%d='%s'(res=%d);",j,parsed_lines_array[i].lexical_word_array[j].lex_word_value,res );
+                if (debug_parsing) printf( "%d='%s'(res=%d);",j,parsed_lines_array[i].lexical_word_array[j].lex_word_value,res );
                 if ((res > 0) && (j > 1)) {
                    t_value t1;
                    char s1[16];
@@ -1400,14 +1401,14 @@ void  parse_input_assembly_file( char * filename, PSYM_TABLES  p_sym_tables )
                    if (t1 == 0) this_addr = search_sym_value_per_sym_values_table( s );
                    else this_addr = (int)t1;
                    this_addr &= MAX_ADDR_VALUE;
-                   printf("this_addr=%04o;",this_addr);
+                   if (debug_parsing) printf("this_addr=%04o;",this_addr);
                    _snprintf(s1,sizeof(s1)-1, "%04o",this_addr );
                    strncpy( parsed_lines_array[i].lexical_word_array[j].lex_word_value, s1, 5 );
-                   printf( "%d='%s';",j,parsed_lines_array[i].lexical_word_array[j].lex_word_value );
+                   if (debug_parsing) printf( "%d='%s';",j,parsed_lines_array[i].lexical_word_array[j].lex_word_value );
                 }
           }
-          printf( "\n" );
-        }
+          if (debug_parsing) printf( "\n" );
+        //}
         res = is_numeric_exp(parsed_lines_array[i].lexical_word_array[k].lex_word_value);
         //if (1) printf( "is_num_exp_res=%d (lex_value='%s')\n", res, parsed_lines_array[i].lexical_word_array[k].lex_word_value );
         if (res < 0) {
@@ -1522,7 +1523,7 @@ void  produce_output_object_file( char * filename )
         //fprintf( fp, ";%s\n",   parsed_lines_array[i].cleaned_text_line );
         //fprintf( fp, ";line %d: %s\n", parsed_lines_array[i].line_num, parsed_lines_array[i].orig_text_line );
         //mcode = parsed_lines_array[i].obj_code_line.mcode;
-        printf( "out_mcode: addr=%04o code=%015llo\n", cur_loc, mcode );
+        if (verbose) printf( "out_mcode: addr=%04o code=%015llo\n", cur_loc, mcode );
         ts = (mcode >> BITS_42) & 07;
         op = (mcode >> BITS_36) & 077;
         a1 = (mcode >> BITS_24) & 07777;

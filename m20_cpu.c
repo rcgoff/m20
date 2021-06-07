@@ -55,8 +55,9 @@
  *  28-May-2021  LOY  Shura-Bura multiplication simplified a bit more.
  *  30-May-2021  LOY  Shura-Bura addition passed full "test 6" (if to correct one erroneous exercise)
  *  01-Jun-2021  LOY  Shura-Bura addition refactored a little: sign determination shortened.
- *  05-Jun-2021  LOY  Old multiplication passes full "Multiply test 5". To do this, checkiing if
+ *  05-Jun-2021  LOY  Old multiplication passes full "Multiply test 5". To do this, checking if
  *                    zero mantissa performs independently for regRR and regRMR, and the same for rexp.
+ *  07-Jun-2021  LOY  Shura-Bura addition bugfix for linux cc (>> more than 36 blocked)
  *
  */
 
@@ -1659,7 +1660,8 @@ t_stat  new_arithmetic_op( t_value * result, t_value x, t_value y, int op_code )
    }
 
    if (delta < 0) {
-     xx1 = (x1 << AUX_BIT_SHIFT) >> -delta;
+     if (delta < -36) xx1=0;
+     	else xx1 = (x1 << AUX_BIT_SHIFT) >> -delta;
      yy1 = y1 << AUX_BIT_SHIFT;
      yy1 |= n0;
      if (arithmetic_op_debug) fprintf( stderr, "DELTA<0: xx1=%015llo yy1=%015llo\n", xx1, yy1 );
@@ -1668,7 +1670,8 @@ t_stat  new_arithmetic_op( t_value * result, t_value x, t_value y, int op_code )
    if (delta > 0) {
      xx1 = x1 << AUX_BIT_SHIFT;
      xx1 |= e0;
-     yy1 = (y1 << AUX_BIT_SHIFT) >> delta;
+     if (delta > 36) yy1=0;
+     	else yy1 = (y1 << AUX_BIT_SHIFT) >> delta;
      if (arithmetic_op_debug) fprintf( stderr, "DELTA>0: xx1=%015llo yy1=%015llo\n", xx1, yy1 );
    }
 

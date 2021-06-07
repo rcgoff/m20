@@ -55,6 +55,8 @@
  *  28-May-2021  LOY  Shura-Bura multiplication simplified a bit more.
  *  30-May-2021  LOY  Shura-Bura addition passed full "test 6" (if to correct one erroneous exercise)
  *  01-Jun-2021  LOY  Shura-Bura addition refactored a little: sign determination shortened.
+ *  05-Jun-2021  LOY  Old multiplication passes full "Multiply test 5". To do this, checkiing if
+ *                    zero mantissa performs independently for regRR and regRMR, and the same for rexp.
  *
  */
 
@@ -848,30 +850,41 @@ t_stat multiplication (t_value *result, t_value x, t_value y, int no_round, int 
 	
     if (arithmetic_op_debug) fprintf( stderr, "mult: r=%015llo, regRMR=%015llo rexp=%d\n", r, regRMR, rexp );
 
-    if (r == 0 || rexp < 0) {
-	/* Нуль. */
-	*result = (x | y) & TAG;
-        if (arithmetic_op_debug) 
-          fprintf( stderr, "mult: result=%015llo, regRMR=%015llo rexp=%d\n\n", *result, regRMR, rexp );
-	return 0;
-    }
-
     if (rexp > 127) {
 	/* переполнение при умножении */
 	return STOP_MULOVF;
     }
 
     /* Конструируем результат. */
+	if (r == 0 || rexp < 0) {
+	/* Нуль. */
+	r = (x | y) & TAG;
+        if (arithmetic_op_debug) 
+          fprintf( stderr, "mult: return NORMZERO=%015llo, regRMR=%015llo rexp=%d\n", r, regRMR, rexp );	
+    }
+	else {
     if (arithmetic_op_debug) fprintf( stderr, "mult: FINAL 1: r=%015llo, rexp=%d\n", r, rexp );
 
      r |= (t_value) rexp << BITS_36;
      r |= ((x ^ y) & SIGN) | ((x | y) & TAG);
+	}
 
-     regRMR &= MANTISSA;
+     regRMR &= MANTISSA;	 
+	 if (regRMR == 0 || rexp < 0) {
+     /* Unlike the techref, criteria for NORMZERO return are the same as for higher bits.
+	 If to obey the techref, we should return NORMZERO only if mantissa of regRMR ==0.
+	 But in this case we can't pass multiplication test. 
+	 So we decide that test passing is more significant.*/
+		 regRMR = (x | y) & TAG;
+	 }
+	 else { 
      if (arithmetic_op_debug) 
        fprintf( stderr, "mult: FINAL 2: r=%015llo, regRMR=%015llo rexp=%d\n", r, regRMR, rexp );
-     regRMR |= (t_value) rexp << BITS_36;
+     regRMR |= (t_value) rexp << BITS_36;	 
      regRMR |= ((x ^ y) & SIGN) | ((x | y) & TAG);
+	 }
+	 
+	 
 
      if (arithmetic_op_debug) 
        fprintf( stderr, "mult: FINAL 3: r=%015llo, regRMR=%015llo rexp=%d\n\n", r, regRMR, rexp );

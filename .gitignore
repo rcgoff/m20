@@ -1,3 +1,14 @@
 .idea
 **/*.o
+**/*.obj
 **/*.exe
+**/*.pdf
+doc
+results
+sources/autocode
+sources/is-2
+sources/images
+sources/samples
+sources/real_m20_progs
+binaries
+

@@ -51,7 +51,7 @@ function execute_test() {
   local timeout_interval=10s
   echo -n "$current_test ... "
   preprocess_test "$current_test"
-  if timeout --foreground "$timeout_interval" time --output "$current_test.time" --format "%es" --quiet "$M20" "$current_test" 2>"$current_test.output" >&2; then
+  if command time --output "$current_test.time" --format "%es" --quiet timeout --foreground "$timeout_interval" "$M20" "$current_test" 2>"$current_test.output" >&2; then
     local debug_file="${current_test%.simh}_debug.txt"
     if ! grep --quiet "Assertion failed" "$debug_file"; then
       echo "$(success SUCCESS) ($(cat "$current_test.time"))"
@@ -93,7 +93,7 @@ for test_file in $(list_tests); do
 done
 
 echo
-echo "Executed $EXECUTED_TESTS tests, $((EXECUTED_TESTS - FAILED_TESTS)) success, $FAILED_TESTS failed"
+echo "Executed $EXECUTED_TESTS tests, $(success "$((EXECUTED_TESTS - FAILED_TESTS)) success"), $(error "$FAILED_TESTS failed")"
 
 if [[ "$FAILED_TESTS" != 0 ]]; then
   exit 1

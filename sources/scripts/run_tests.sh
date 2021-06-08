@@ -33,6 +33,18 @@ function preprocess_test() {
   sed -ri 's/^! del/! rm -f/' "$1"
 }
 
+# Format error message
+function error() {
+  local message="$1"
+  echo "$(tput setaf 1 2>/dev/null)$(tput bold 2>/dev/null)$message$(tput sgr0 2>/dev/null)"
+}
+
+# Format success message
+function success() {
+  local message="$1"
+  echo "$(tput setaf 2 2>/dev/null)$(tput bold 2>/dev/null)$message$(tput sgr0 2>/dev/null)"
+}
+
 # Define function to execute single test
 function execute_test() {
   local current_test="$1"
@@ -42,20 +54,20 @@ function execute_test() {
   if timeout --foreground "$timeout_interval" time --output "$current_test.time" --format "%es" --quiet "$M20" "$current_test" 2>"$current_test.output" >&2; then
     local debug_file="${current_test%.simh}_debug.txt"
     if ! grep --quiet "Assertion failed" "$debug_file"; then
-      echo "$(tput setaf 2)$(tput bold)SUCCESS$(tput sgr0) ($(cat "$current_test.time"))"
+      echo "$(success SUCCESS) ($(cat "$current_test.time"))"
     else
-      echo "$(tput setaf 1)$(tput bold)FAILED$(tput sgr0) ($(cat "$current_test.time"))"
+      echo "$(error FAILED) ($(cat "$current_test.time"))"
       return 1
     fi
   else
     EXIT_CODE=$?
     DETAILS=""
     if [[ "$EXIT_CODE" == 124 ]]; then
-      DETAILS=" (timeout after $timeout_interval)"
+      DETAILS="(timeout after $timeout_interval)"
     else
-      DETAILS=" ($(cat "$current_test.time"))"
+      DETAILS="($(cat "$current_test.time"))"
     fi
-    echo "$(tput setaf 1)$(tput bold)ERROR$(tput sgr0)$DETAILS"
+    echo "$(error ERROR) $DETAILS"
     return 1
   fi
 }

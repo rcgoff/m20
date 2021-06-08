@@ -58,6 +58,8 @@
  *  05-Jun-2021  LOY  Old multiplication passes full "Multiply test 5". To do this, checking if
  *                    zero mantissa performs independently for regRR and regRMR, and the same for rexp.
  *  07-Jun-2021  LOY  Shura-Bura addition bugfix for linux cc (>> more than 36 blocked)
+ *  08-Jun-2021  LOY  Shura-Bura multiplication passes full "Multiply test 5". 
+ *                    (same changes as in Old Multiplication)
  *
  */
 
@@ -2030,35 +2032,45 @@ t_stat new_arithmetic_mult_op (t_value *result, t_value x, t_value y, int op_cod
    
    if (arithmetic_op_debug) 
      fprintf( stderr, "rr=%d rr_hi=%015llo rr_lo=%015llo rr_hi=%015llo\n", rr, rr_hi, rr_lo, rr_hi );
+ 
+ 
+ /* Make final result */
 
-   if ((rr_hi != 0) && (rr > 127)) {
-       return STOP_MULOVF;
-   }
-
-   if ((rr_hi == 0) || (rr < 0)) {
-     t = norm_zero(); 
-     *result = t;
-     if (arithmetic_op_debug) fprintf( stderr, "FINAL ZERO: t=%015llo\n\n", t );
-     return SCPE_OK; 
-   }
-
-    if (rr > 127) {
 	/* переполнение при умножении */
-	return STOP_MULOVF;
-    }
-
-   /* Make final result */
-   if (arithmetic_op_debug) 
-     fprintf( stderr, "FINAL 1: rr=%d rr_lo=%015llo rr_hi=%015llo rr_hi=%015llo\n", rr, rr_lo, rr_hi, rr_hi );
-
-   t = rr_hi & MANTISSA;
-   t |= ((t_value)rr << BITS_36);
-   if (sign_zz < 0) t |= SIGN;
-   t |= (x|y) & TAG;
-
-   regRMR = rr_lo;
-   regRMR |= (t_value) rr << BITS_36;
-   regRMR |= ((x ^ y) & SIGN) | ((x | y) & TAG);
+	//if ((rr_hi != 0) && (rr > 127)) {
+	   //not so strong!
+	if (rr > 127) return STOP_MULOVF; 
+   
+	
+	/* higher word processing */
+   if ((rr_hi == 0) || (rr < 0)) {
+     t = norm_zero();
+     if (arithmetic_op_debug) fprintf( stderr, "FINAL: return NORMZERO_hi: t=%015llo\n\n", t );      
+   }
+   else {
+	 if (arithmetic_op_debug) 
+		fprintf( stderr, "FINAL 1: rr=%d rr_lo=%015llo rr_hi=%015llo rr_hi=%015llo\n", rr, rr_lo, rr_hi, rr_hi );
+	 t = rr_hi & MANTISSA;
+     t |= ((t_value)rr << BITS_36);
+     if (sign_zz < 0) t |= SIGN;
+   }
+	t |= ((x | y) & TAG);   
+    
+   /* lower word processing. Note that rr<0 checking is not described in techref, but if don't check it,
+   we can't pass Multiply Test 5   */
+   if (rr_lo == 0 || (rr < 0)) {
+	   regRMR=norm_zero();
+	   fprintf( stderr, "FINAL: return NORMZERO_lo: rr=%d rr_hi=%015llo, t==%015llo, regRMR=%015llo\n\n", rr, rr_hi, t, regRMR );
+   }
+   else {   
+	   regRMR = rr_lo;
+       regRMR |= (t_value) rr << BITS_36;
+       regRMR |= ((x ^ y) & SIGN);
+   }
+   regRMR |= ((x | y) & TAG);
+   
+   
+   
 
    if (arithmetic_op_debug) 
      fprintf( stderr, "FINAL 8: rr=%d rr_hi=%015llo, t==%015llo, regRMR=%015llo\n\n", rr, rr_hi, t, regRMR );

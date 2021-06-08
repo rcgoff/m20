@@ -1,6 +1,6 @@
 name: M-20 Simulator CI
 
-on: [push]
+on: [ push ]
 
 jobs:
   ubuntu-build:
@@ -12,3 +12,14 @@ jobs:
         working-directory: sources/emulator
         run: |
           make -f makefile.unx
+      - name: Run tests
+        working-directory: sources/emulator
+        run: |
+          make -f makefile.unx test
+      - name: Archive test results on failure
+        uses: actions/upload-artifact@v2
+        if: ${{ failure() }}
+        with:
+          name: test-results
+          path: sources/complex_test_1963/run-*
+          retention-days: 7

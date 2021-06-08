@@ -276,3 +276,6 @@ clean:
 
 cleanru:
 	$(RM) $(M20ru_OBJS)
+
+test: all
+	../scripts/run_tests.sh ./m20 ../complex_test_1963

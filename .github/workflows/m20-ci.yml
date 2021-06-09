@@ -3,7 +3,7 @@ name: M-20 Simulator CI
 on: [ push ]
 
 jobs:
-  ubuntu-build:
+  linux-build:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -20,6 +20,37 @@ jobs:
         uses: actions/upload-artifact@v2
         if: ${{ failure() }}
         with:
-          name: test-results
+          name: linux-test-results
+          path: sources/complex_test_1963/run-*
+          retention-days: 7
+  mingw-build:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2.0.0
+      - name: Build project
+        working-directory: sources/emulator
+        run: |
+          .\build_mingw64.bat
+  visual-studio:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2.0.0
+      - name: Configure Developer Command Prompt for MSVC
+        uses: ilammy/msvc-dev-cmd@v1
+      - name: Build project
+        working-directory: sources/emulator
+        run: |
+          .\build_win.bat
+      - name: Run tests
+        working-directory: sources/emulator
+        run: |
+          .\build_win.bat test
+      - name: Archive test results on failure
+        uses: actions/upload-artifact@v2
+        if: ${{ failure() }}
+        with:
+          name: visual-studio-test-results
           path: sources/complex_test_1963/run-*
           retention-days: 7

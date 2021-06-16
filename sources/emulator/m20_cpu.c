@@ -1380,10 +1380,15 @@ t_stat new_addition_v44 (t_value *result, t_value x, t_value y, int no_round, in
 
     if (arithmetic_op_debug) fprintf( stderr, "add02: xm=%015llo ym=%015llo xm1=%018llo ym1=%018llo\n", xm, ym, xm1, ym1 );
 
+//rc 15.06.2021 rounding is incorrect in many ways:
+//rc 1. Round isn't performed on subtraction (here this is taken onto account, but should verify).
+
+//rc 3. Round process should perform after mantissa alignment (but set to not shifted doesnt matter when).
     if (!no_round && (((x ^ y) & SIGN) == 0)) {
         if ((xexp != yexp) && ((xm1 & MANTISSA<<1) && (ym1 & MANTISSA<<1))) {
-          xm1 |= 1;
-          ym1 |= 1;
+			//rc 2. Round process is set 1 to auxilary bit of not shifted summand only
+			if (xexp > yexp)  xm1 |= 1;
+            else ym1 |= 1;
           if (arithmetic_op_debug) fprintf( stderr, "add: ROUND: xm=%015llo ym=%015llo xm1=%018llo ym1=%018llo\n", xm, ym, xm1, ym1 );
        }
     }
@@ -1404,7 +1409,8 @@ t_stat new_addition_v44 (t_value *result, t_value x, t_value y, int no_round, in
     rs = 1;
     if (rr < 0) {
       rs = -1;
-      rr = rr * rs;
+      //rr = rr * rs;
+	  rr = -rr;
     }
     if (arithmetic_op_debug) fprintf( stderr, "add06: rr=%018llo\n", rr );
     r = (rr & (MANTISSA|BIT37|BIT38));

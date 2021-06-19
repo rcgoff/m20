@@ -1375,8 +1375,10 @@ t_stat new_addition_v44 (t_value *result, t_value x, t_value y, int no_round, in
     if (x & SIGN) xs = -1;
     if (y & SIGN) ys = -1;
 
-    xm1 = (xs * xm) << 1;
-    ym1 = (ys * ym) << 1;
+    //xm1 = (xs * xm) << 1;
+    //ym1 = (ys * ym) << 1;
+	xm1 = xm << 1;
+    ym1 = ym << 1;
 
     if (arithmetic_op_debug) fprintf( stderr, "add02: xm=%015llo ym=%015llo xm1=%018llo ym1=%018llo\n", xm, ym, xm1, ym1 );
 
@@ -1399,6 +1401,12 @@ t_stat new_addition_v44 (t_value *result, t_value x, t_value y, int no_round, in
     /* Mantissa alignment */
     if (delta_exp > 0) ym1 >>= (xexp - yexp);
     else if (delta_exp < 0) xm1 >>= (xexp - yexp);
+	
+	xm1 = (xs * xm1) ;
+    ym1 = (ys * ym1) ;
+	if (arithmetic_op_debug) fprintf( stderr, "add03a:  xm1=%018llo ym1=%018llo\n",  xm1, ym1 );
+
+	
 
     /* Addition */
     rexp = xexp;

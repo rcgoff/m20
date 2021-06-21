@@ -1358,15 +1358,15 @@ t_stat new_addition_v44 (t_value *result, t_value x, t_value y, int no_round, in
     xexp = x >> BITS_36 & 0177;
     yexp = y >> BITS_36 & 0177;
 
-    if (arithmetic_op_debug) fprintf( stderr, "add01: xexp=%d y_exp=%d\n", xexp, yexp );
+    if (arithmetic_op_debug) fprintf( stderr, "add01: x_exp=%d y_exp=%d\n", xexp, yexp );
 
     if (yexp > xexp) {
-	/* Assume always that x > y */
-	t = x; texp = xexp;
-	x = y; xexp = yexp;
-	y = t; yexp = texp;
+		/* Assume always that x > y */
+		t = x; texp = xexp;
+		x = y; xexp = yexp;
+		y = t; yexp = texp;
     }
-
+	
     /* Get mantissa */
     xm = x & MANTISSA;
     ym = y & MANTISSA;
@@ -1375,20 +1375,16 @@ t_stat new_addition_v44 (t_value *result, t_value x, t_value y, int no_round, in
     if (x & SIGN) xs = -1;
     if (y & SIGN) ys = -1;
 
-    //xm1 = (xs * xm) << 1;
-    //ym1 = (ys * ym) << 1;
-	xm1 = xm << 1;
+    xm1 = xm << 1;
     ym1 = ym << 1;
 
     if (arithmetic_op_debug) fprintf( stderr, "add02: xm=%015llo ym=%015llo xm1=%018llo ym1=%018llo\n", xm, ym, xm1, ym1 );
 
-//rc 15.06.2021 rounding is incorrect in many ways:
-//rc 1. Round isn't performed on subtraction (here this is taken onto account, but should verify).
 
-//rc 3. Round process should perform after mantissa alignment (but set to not shifted doesnt matter when).
-    if (!no_round && (((x ^ y) & SIGN) == 0)) {
-        if ((xexp != yexp) && ((xm1 & MANTISSA<<1) && (ym1 & MANTISSA<<1))) {
-			//rc 2. Round process is set 1 to auxilary bit of not shifted summand only
+    if (!no_round && (((x ^ y) & SIGN) == 0)) {        
+			fprintf(stderr,"xnormzero=%d ynormzero=%d \n",is_norm_zero(x),is_norm_zero(y));			
+		if ( (xexp != yexp) && !(is_norm_zero(x)) && !(is_norm_zero(y)) ) {
+			//Round process is set 1 to auxilary bit of not shifted summand only
 			if (xexp > yexp)  xm1 |= 1;
             else ym1 |= 1;
           if (arithmetic_op_debug) fprintf( stderr, "add: ROUND: xm=%015llo ym=%015llo xm1=%018llo ym1=%018llo\n", xm, ym, xm1, ym1 );
@@ -1402,6 +1398,7 @@ t_stat new_addition_v44 (t_value *result, t_value x, t_value y, int no_round, in
     if (delta_exp > 0) ym1 >>= (xexp - yexp);
     else if (delta_exp < 0) xm1 >>= (xexp - yexp);
 	
+	/* Sign setting - only here, if do it before rounding, we can get wrong results */
 	xm1 = (xs * xm1) ;
     ym1 = (ys * ym1) ;
 	if (arithmetic_op_debug) fprintf( stderr, "add03a:  xm1=%018llo ym1=%018llo\n",  xm1, ym1 );
@@ -1417,7 +1414,7 @@ t_stat new_addition_v44 (t_value *result, t_value x, t_value y, int no_round, in
     rs = 1;
     if (rr < 0) {
       rs = -1;
-      //rr = rr * rs;
+//      rr = rr * rs;
 	  rr = -rr;
     }
     if (arithmetic_op_debug) fprintf( stderr, "add06: rr=%018llo\n", rr );
@@ -2505,8 +2502,35 @@ add2:
                     err = new_arithmetic_op( &regRR, x, y, op );
 		    goto add2;
                 }
-		x = mosu_load (a1);
-		y = mosu_load (a2) ^ SIGN;
+		x = mosu_load (a1);		
+				
+		/* When one of operands is machine zero, rounding should not be performed. 
+		But if we take machine zero as 2nd operand, invert the sign and call addition,
+		it already will not be machine zero and can be rounded. Opposite case also may occur,
+		when the 2nd operand is -0 and will not be rounded after sign inversion (as machine zero).
+		
+		Non-inverting the sign of machine zero and then call addition is wrong decision,
+		because in this case rounding logic (based on signs) may became broken. 
+		Same problems if non-inverting the sign of both -0 and machine zero.
+		Right way is to detect machine zero and in this case switch rounding off 
+		(by opcode correction), then call addition.
+		
+		This hypotetic situation unfortunately didn't covered by complex tests of 1963,
+		but tested by LOY.*/ 
+		
+		y = mosu_load (a2);
+		 if (arithmetic_op_debug) fprintf(stderr,"sub01: y=%15llo \n",y);
+		if (is_norm_zero(y)) {
+			//bit5 = 1 in opcode means round OFF
+			 if (arithmetic_op_debug) fprintf(stderr,"sub02: NORMZERO DETECTED, opcode=%o, ",op);
+			op |= 0b10000;
+			 if (arithmetic_op_debug) fprintf(stderr,"modified opcode=%o \n",op);
+		}
+		
+		y ^= SIGN;
+		 if (arithmetic_op_debug) fprintf(stderr,"sub03: y_after_inversion_=%15llo \n",y);
+				
+		
 		goto add;
 
 

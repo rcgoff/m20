@@ -60,6 +60,10 @@
  *  07-Jun-2021  LOY  Shura-Bura addition bugfix for linux cc (>> more than 36 blocked)
  *  08-Jun-2021  LOY  Shura-Bura multiplication passes full "Multiply test 5". 
  *                    (same changes as in Old Multiplication)
+ *  22-Jun-2021  LOY  new_addition_v44 passed full "test 6" (if to correct one erroneous exercise),
+ *                    and after that refactored a little (swap x<->y has thrown out). Also
+ *                    cpu_one_inst changed (subtraction section). But not all hypotetic situations
+ *                    covered by tests yet.
  *
  */
 
@@ -1346,8 +1350,8 @@ t_stat new_addition_v20 (t_value *result, t_value x, t_value y, int no_round, in
  */
 t_stat new_addition_v44 (t_value *result, t_value x, t_value y, int no_round, int no_norm)
 {
-    int xexp, yexp, rexp, texp, fix_sign, xs, ys, rs, r_bit, shift_count, delta_exp;
-    t_value r, t;
+    int xexp, yexp, rexp, fix_sign, xs, ys, rs, r_bit, shift_count, delta_exp;
+    t_value r;
     t_int64 xm, ym, xm1, ym1, rr;
 
     r = 0;
@@ -1359,13 +1363,6 @@ t_stat new_addition_v44 (t_value *result, t_value x, t_value y, int no_round, in
     yexp = y >> BITS_36 & 0177;
 
     if (arithmetic_op_debug) fprintf( stderr, "add01: x_exp=%d y_exp=%d\n", xexp, yexp );
-
-    if (yexp > xexp) {
-		/* Assume always that x > y */
-		t = x; texp = xexp;
-		x = y; xexp = yexp;
-		y = t; yexp = texp;
-    }
 	
     /* Get mantissa */
     xm = x & MANTISSA;
@@ -1380,33 +1377,34 @@ t_stat new_addition_v44 (t_value *result, t_value x, t_value y, int no_round, in
 
     if (arithmetic_op_debug) fprintf( stderr, "add02: xm=%015llo ym=%015llo xm1=%018llo ym1=%018llo\n", xm, ym, xm1, ym1 );
 
-
+	delta_exp = xexp - yexp;
     if (!no_round && (((x ^ y) & SIGN) == 0)) {        
 			fprintf(stderr,"xnormzero=%d ynormzero=%d \n",is_norm_zero(x),is_norm_zero(y));			
 		if ( (xexp != yexp) && !(is_norm_zero(x)) && !(is_norm_zero(y)) ) {
 			//Round process is set 1 to auxilary bit of not shifted summand only
-			if (xexp > yexp)  xm1 |= 1;
+			if (delta_exp > 0)  xm1 |= 1;
             else ym1 |= 1;
           if (arithmetic_op_debug) fprintf( stderr, "add: ROUND: xm=%015llo ym=%015llo xm1=%018llo ym1=%018llo\n", xm, ym, xm1, ym1 );
        }
     }
-
-    delta_exp = xexp - yexp;
+    
     if (arithmetic_op_debug) fprintf( stderr, "add03: delta_exp=%d xm1=%018llo ym1=%018llo\n", delta_exp, xm1, ym1 );
 
     /* Mantissa alignment */
-    if (delta_exp > 0) ym1 >>= (xexp - yexp);
-    else if (delta_exp < 0) xm1 >>= (xexp - yexp);
+    if (delta_exp >= 0) {
+		ym1 >>= delta_exp;
+		rexp = xexp;
+	}
+    else {
+		xm1 >>= -delta_exp;
+		rexp = yexp;
+	}
 	
 	/* Sign setting - only here, if do it before rounding, we can get wrong results */
-	xm1 = (xs * xm1) ;
-    ym1 = (ys * ym1) ;
-	if (arithmetic_op_debug) fprintf( stderr, "add03a:  xm1=%018llo ym1=%018llo\n",  xm1, ym1 );
+	xm1 *= xs; 
+	ym1 *= ys;	
 
-	
-
-    /* Addition */
-    rexp = xexp;
+    /* Addition */   
     if (arithmetic_op_debug) fprintf( stderr, "add04: rexp=%d xm1=%018llo ym1=%018llo\n", rexp, xm1, ym1 );
 
     rr = xm1 + ym1;
@@ -1414,7 +1412,6 @@ t_stat new_addition_v44 (t_value *result, t_value x, t_value y, int no_round, in
     rs = 1;
     if (rr < 0) {
       rs = -1;
-//      rr = rr * rs;
 	  rr = -rr;
     }
     if (arithmetic_op_debug) fprintf( stderr, "add06: rr=%018llo\n", rr );
@@ -1424,7 +1421,6 @@ t_stat new_addition_v44 (t_value *result, t_value x, t_value y, int no_round, in
     r_bit = 0;
     shift_count = 0;
 
-    // here must be rouding
     /* normalization to right */
     if (r & (BIT37<<1)) {
         if (arithmetic_op_debug) fprintf( stderr, "add: C1: NORM_R: rexp=%d r=%018llo\n", rexp, r );
@@ -2510,25 +2506,29 @@ add2:
 		when the 2nd operand is -0 and will not be rounded after sign inversion (as machine zero).
 		
 		Non-inverting the sign of machine zero and then call addition is wrong decision,
-		because in this case rounding logic (based on signs) may became broken. 
+		because in this case rounding logic (based on signs) may became broken for -0. 
 		Same problems if non-inverting the sign of both -0 and machine zero.
 		Right way is to detect machine zero and in this case switch rounding off 
 		(by opcode correction), then call addition.
+		
+		When the 2nd operand is -0, and the 1st is positive, rounding should be ON.
+		To do this, inverting/noninverting the sign is unsufficient. When to decide
+		round or not, it should be known: ADD or SUB is calculating now.
 		
 		This hypotetic situation unfortunately didn't covered by complex tests of 1963,
 		but tested by LOY.*/ 
 		
 		y = mosu_load (a2);
-		 if (arithmetic_op_debug) fprintf(stderr,"sub01: y=%15llo \n",y);
+		if (arithmetic_op_debug) fprintf(stderr,"sub01: y=%15llo \n",y);
 		if (is_norm_zero(y)) {
 			//bit5 = 1 in opcode means round OFF
-			 if (arithmetic_op_debug) fprintf(stderr,"sub02: NORMZERO DETECTED, opcode=%o, ",op);
+			if (arithmetic_op_debug) fprintf(stderr,"sub02: NORMZERO DETECTED, opcode=%o, ",op);
 			op |= 0b10000;
-			 if (arithmetic_op_debug) fprintf(stderr,"modified opcode=%o \n",op);
+			if (arithmetic_op_debug) fprintf(stderr,"modified opcode=%o \n",op);
 		}
 		
 		y ^= SIGN;
-		 if (arithmetic_op_debug) fprintf(stderr,"sub03: y_after_inversion_=%15llo \n",y);
+		if (arithmetic_op_debug) fprintf(stderr,"sub03: y_after_inversion=%15llo \n",y);
 				
 		
 		goto add;

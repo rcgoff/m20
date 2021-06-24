@@ -77,8 +77,9 @@ ex RPU4
 load test_14.m20
 ;
 ;break -e 1[1]
-break -e 1[3]
-break -e 4[3]
+;break -e 1[3]
+;break -e 4[3]
+break -e 21[10]
 ;break -e 35
 show break all
 ;

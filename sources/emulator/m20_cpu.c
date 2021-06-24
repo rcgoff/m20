@@ -57,14 +57,14 @@
  *  01-Jun-2021  LOY  Shura-Bura addition refactored a little: sign determination shortened.
  *  05-Jun-2021  LOY  Old multiplication passes full "Multiply test 5". To do this, checking if
  *                    zero mantissa performs independently for regRR and regRMR, and the same for rexp.
- *  07-Jun-2021  LOY  Shura-Bura addition bugfix for linux cc (>> more than 36 blocked)
+ *  07-Jun-2021  LOY  Shura-Bura addition bugfix for linux gcc (>> more than 36 blocked)
  *  08-Jun-2021  LOY  Shura-Bura multiplication passes full "Multiply test 5". 
  *                    (same changes as in Old Multiplication)
  *  22-Jun-2021  LOY  new_addition_v44 passed full "test 6" (if to correct one erroneous exercise),
  *                    and after that refactored a little (swap x<->y has thrown out). Also
  *                    cpu_one_inst changed (subtraction section). But not all hypotetic situations
  *                    covered by tests yet.
- *
+ *  24-Jun-2021  LOY  is_norm_zero moved; new_addition_v44 bugfix for linux gcc (>> more than 36)
  */
 
 #include "m20_defs.h"
@@ -1345,6 +1345,15 @@ t_stat new_addition_v20 (t_value *result, t_value x, t_value y, int no_round, in
 
 
 
+static int  is_norm_zero( t_value num )
+{
+    if ( ((num & SIGN) == 0) && ((num & MANTISSA) == 0) && ((num & EXPONENT) == 0))
+        return 1;
+    else
+        return 0;
+}
+
+
 /*
  * Two numbers addition. If required then blocking of rounding and normalization.
  */
@@ -1392,11 +1401,13 @@ t_stat new_addition_v44 (t_value *result, t_value x, t_value y, int no_round, in
 
     /* Mantissa alignment */
     if (delta_exp >= 0) {
-		ym1 >>= delta_exp;
+		if (delta_exp < 37) ym1 >>= delta_exp;
+		else ym1 = 0;
 		rexp = xexp;
 	}
     else {
-		xm1 >>= -delta_exp;
+		if ((-delta_exp) < 37) xm1 >>= -delta_exp;
+		else xm1 = 0;
 		rexp = yexp;
 	}
 	
@@ -1515,14 +1526,6 @@ static int  get_number_sign( t_value num )
   return( num & SIGN ? -1 : 1 );
 }
 
-
-static int  is_norm_zero( t_value num )
-{
-    if ( ((num & SIGN) == 0) && ((num & MANTISSA) == 0) && ((num & EXPONENT) == 0))
-        return 1;
-    else
-        return 0;
-}   
 
 
 static t_value  norm_zero( void )

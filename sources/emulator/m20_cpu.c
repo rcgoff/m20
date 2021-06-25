@@ -65,7 +65,8 @@
  *                    cpu_one_inst changed (subtraction section). But not all hypotetic situations
  *                    covered by tests yet.
  *  24-Jun-2021  LOY  is_norm_zero moved; new_addition_v44 bugfix for linux gcc (>> more than 36)
- *  25-Jun-2021  LOY  -0 subtraction in new_addition_v44 processed correctly
+ *  25-Jun-2021  LOY  -0 subtraction in new_addition_v44 processed correctly. 
+ *			Bugfix in shift commands (14,34,54,74) for linux.
  */
 
 #include "m20_defs.h"
@@ -2792,8 +2793,10 @@ shm:
                 y = mosu_load (a2);
 		regRR = (y & ~MANTISSA);
 		//fprintf( stderr, "n=%d y=%015lo, regRR=%015llo\n", n, y, regRR );
-		if (n >= 0) regRR |= (((y & MANTISSA) << n) & MANTISSA);
-		else if (n < 0) regRR |= (((y & MANTISSA) >> -n) & MANTISSA);
+		if ((n < 36) && (-n < 36)) {		//linux bugfix. 36 is mantissa length
+		    if (n >= 0) regRR |= (((y & MANTISSA) << n) & MANTISSA);
+		    else if (n < 0) regRR |= (((y & MANTISSA) >> -n) & MANTISSA);
+		}
                 //regRR &= WORD45;
 		mosu_store (a3, regRR);
 		trgSW = ((regRR & MANTISSA) == 0);
@@ -2809,10 +2812,13 @@ shm:
 		n = (a1 & 0177) - M20_MANTISSA_SHIFT;
 		delay += 61.5 + 1.5 * (n>0 ? n : -n);
 shift:		
-                regRR = mosu_load (a2);
-		if (n > 0) regRR = (regRR << n); 
-		else if (n < 0) regRR >>= -n;
-                regRR &= WORD45;
+		if ((n < 45) && (-n < 45)) {		//linux bugfix. 45 is machine word length
+            	    regRR = mosu_load (a2);
+		    if (n > 0) regRR = (regRR << n); 
+		    else if (n < 0) regRR >>= -n;
+            	    regRR &= WORD45;
+                }
+                else regRR = 0;
 		mosu_store (a3, regRR);
 		trgSW = (regRR == 0);
 		break;

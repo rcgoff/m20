@@ -65,6 +65,7 @@
  *                    cpu_one_inst changed (subtraction section). But not all hypotetic situations
  *                    covered by tests yet.
  *  24-Jun-2021  LOY  is_norm_zero moved; new_addition_v44 bugfix for linux gcc (>> more than 36)
+ *  25-Jun-2021  LOY  -0 subtraction in new_addition_v44 processed correctly
  */
 
 #include "m20_defs.h"
@@ -1357,7 +1358,9 @@ static int  is_norm_zero( t_value num )
 /*
  * Two numbers addition. If required then blocking of rounding and normalization.
  */
-t_stat new_addition_v44 (t_value *result, t_value x, t_value y, int no_round, int no_norm)
+t_stat new_addition_v44 (t_value *result, t_value x, t_value y, int no_round, int no_norm, int force_round)
+    /* force_round=1 forces rounding: machine zero and opposite signs checking are disabled.
+    rounding performs if no_round=0 and mantissa aling occured */
 {
     int xexp, yexp, rexp, fix_sign, xs, ys, rs, r_bit, shift_count, delta_exp;
     t_value r;
@@ -1387,9 +1390,9 @@ t_stat new_addition_v44 (t_value *result, t_value x, t_value y, int no_round, in
     if (arithmetic_op_debug) fprintf( stderr, "add02: xm=%015llo ym=%015llo xm1=%018llo ym1=%018llo\n", xm, ym, xm1, ym1 );
 
 	delta_exp = xexp - yexp;
-    if (!no_round && (((x ^ y) & SIGN) == 0)) {        
+    if (!no_round && (force_round || (((x ^ y) & SIGN) == 0))) {        
 			fprintf(stderr,"xnormzero=%d ynormzero=%d \n",is_norm_zero(x),is_norm_zero(y));			
-		if ( (xexp != yexp) && !(is_norm_zero(x)) && !(is_norm_zero(y)) ) {
+		if ( (xexp != yexp) && (force_round || (!(is_norm_zero(x)) && !(is_norm_zero(y))))) {
 			//Round process is set 1 to auxilary bit of not shifted summand only
 			if (delta_exp > 0)  xm1 |= 1;
             else ym1 |= 1;
@@ -2419,7 +2422,7 @@ t_stat ext_io_operation (int a1, t_value * sum)
  */
 t_stat cpu_one_inst ()
 {
-	int addr_tags, op, a1, a2, a3, n = 0;
+	int addr_tags, op, a1, a2, a3, n = 0, force_round = 0;
 	t_value x, y, t;
 	t_stat err;
 	//unsigned __int64 t1;
@@ -2481,7 +2484,7 @@ t_stat cpu_one_inst ()
 		}
 add:		
                 //if (new_add) err = new_addition_v20 (&regRR, x, y, op >> 4 & 1, op >> 5 & 1);
-                if (new_add) err = new_addition_v44 (&regRR, x, y, op >> 4 & 1, op >> 5 & 1);
+                if (new_add) err = new_addition_v44 (&regRR, x, y, op >> 4 & 1, op >> 5 & 1, force_round);
                 else err = addition (&regRR, x, y, op >> 4 & 1, op >> 5 & 1);
 add2:
 		if (err) return err;
@@ -2518,17 +2521,26 @@ add2:
 		To do this, inverting/noninverting the sign is unsufficient. When to decide
 		round or not, it should be known: ADD or SUB is calculating now.
 		
-		This hypotetic situation unfortunately didn't covered by complex tests of 1963,
-		but tested by LOY.*/ 
+		So, LOY introduced forced rounding as a feature of new_addition_v44,
+		and set it as "1" on conditions listed above.
+		
+		This -0 subtraction didn't covered by General Arithmetic Test 6 of 1963,
+		but tested in test_02.simh and also seperetely by LOY.*/ 
 		
 		y = mosu_load (a2);
 		if (arithmetic_op_debug) fprintf(stderr,"sub01: y=%15llo \n",y);
 		if (is_norm_zero(y)) {
 			//bit5 = 1 in opcode means round OFF
-			if (arithmetic_op_debug) fprintf(stderr,"sub02: NORMZERO DETECTED, opcode=%o, ",op);
+			if (arithmetic_op_debug) fprintf(stderr,"sub02a: NORMZERO DETECTED, opcode=%o, ",op);
 			op |= 0b10000;
 			if (arithmetic_op_debug) fprintf(stderr,"modified opcode=%o \n",op);
 		}
+		// "-0" processing
+		if ( !((y & SIGN) == 0) && ((y & MANTISSA) == 0) && ((y & EXPONENT) == 0)) {
+		    if ( ((x & SIGN) == 0) && !(is_norm_zero(x))) force_round = 1;
+		    if (arithmetic_op_debug) fprintf(stderr,"sub02b: MINUSZERO DETECTED, force_round=%d \n",force_round);
+		}
+
 		
 		y ^= SIGN;
 		if (arithmetic_op_debug) fprintf(stderr,"sub03: y_after_inversion=%15llo \n",y);
@@ -2552,7 +2564,7 @@ add2:
 		x = mosu_load (a1) & ~SIGN;
 		y = mosu_load (a2) | SIGN;
 		if ((op==003) || (op==023)) no_norm=0; 
-                if (new_add) err = new_addition_v44 (&regRR, x, y, 1, no_norm);
+                if (new_add) err = new_addition_v44 (&regRR, x, y, 1, no_norm, force_round);
                 //if (new_add) err = new_addition_v20 (&regRR, x, y, 1, no_norm);
                 else err = addition (&regRR, x, y, 1, no_norm);
 		goto add2;

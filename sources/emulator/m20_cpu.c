@@ -57,10 +57,15 @@
  *  01-Jun-2021  LOY  Shura-Bura addition refactored a little: sign determination shortened.
  *  05-Jun-2021  LOY  Old multiplication passes full "Multiply test 5". To do this, checking if
  *                    zero mantissa performs independently for regRR and regRMR, and the same for rexp.
- *  07-Jun-2021  LOY  Shura-Bura addition bugfix for linux cc (>> more than 36 blocked)
+ *  07-Jun-2021  LOY  Shura-Bura addition bugfix for linux gcc (>> more than 36 blocked)
  *  08-Jun-2021  LOY  Shura-Bura multiplication passes full "Multiply test 5". 
  *                    (same changes as in Old Multiplication)
- *
+ *  22-Jun-2021  LOY  new_addition_v44 passed full "test 6" (if to correct one erroneous exercise),
+ *                    and after that refactored a little (swap x<->y has thrown out). Also
+ *                    cpu_one_inst changed (subtraction section). But not all hypotetic situations
+ *                    covered by tests yet.
+ *  24-Jun-2021  LOY  is_norm_zero moved; new_addition_v44 bugfix for linux gcc (>> more than 36)
+ *  25-Jun-2021  LOY  -0 subtraction in new_addition_v44 processed correctly
  */
 
 #include "m20_defs.h"
@@ -1341,13 +1346,24 @@ t_stat new_addition_v20 (t_value *result, t_value x, t_value y, int no_round, in
 
 
 
+static int  is_norm_zero( t_value num )
+{
+    if ( ((num & SIGN) == 0) && ((num & MANTISSA) == 0) && ((num & EXPONENT) == 0))
+        return 1;
+    else
+        return 0;
+}
+
+
 /*
  * Two numbers addition. If required then blocking of rounding and normalization.
  */
-t_stat new_addition_v44 (t_value *result, t_value x, t_value y, int no_round, int no_norm)
+t_stat new_addition_v44 (t_value *result, t_value x, t_value y, int no_round, int no_norm, int force_round)
+    /* force_round=1 forces rounding: machine zero and opposite signs checking are disabled.
+    rounding performs if no_round=0 and mantissa aling occured */
 {
-    int xexp, yexp, rexp, texp, fix_sign, xs, ys, rs, r_bit, shift_count, delta_exp;
-    t_value r, t;
+    int xexp, yexp, rexp, fix_sign, xs, ys, rs, r_bit, shift_count, delta_exp;
+    t_value r;
     t_int64 xm, ym, xm1, ym1, rr;
 
     r = 0;
@@ -1358,15 +1374,8 @@ t_stat new_addition_v44 (t_value *result, t_value x, t_value y, int no_round, in
     xexp = x >> BITS_36 & 0177;
     yexp = y >> BITS_36 & 0177;
 
-    if (arithmetic_op_debug) fprintf( stderr, "add01: xexp=%d y_exp=%d\n", xexp, yexp );
-
-    if (yexp > xexp) {
-	/* Assume always that x > y */
-	t = x; texp = xexp;
-	x = y; xexp = yexp;
-	y = t; yexp = texp;
-    }
-
+    if (arithmetic_op_debug) fprintf( stderr, "add01: x_exp=%d y_exp=%d\n", xexp, yexp );
+	
     /* Get mantissa */
     xm = x & MANTISSA;
     ym = y & MANTISSA;
@@ -1375,28 +1384,41 @@ t_stat new_addition_v44 (t_value *result, t_value x, t_value y, int no_round, in
     if (x & SIGN) xs = -1;
     if (y & SIGN) ys = -1;
 
-    xm1 = (xs * xm) << 1;
-    ym1 = (ys * ym) << 1;
+    xm1 = xm << 1;
+    ym1 = ym << 1;
 
     if (arithmetic_op_debug) fprintf( stderr, "add02: xm=%015llo ym=%015llo xm1=%018llo ym1=%018llo\n", xm, ym, xm1, ym1 );
 
-    if (!no_round && (((x ^ y) & SIGN) == 0)) {
-        if ((xexp != yexp) && ((xm1 & MANTISSA<<1) && (ym1 & MANTISSA<<1))) {
-          xm1 |= 1;
-          ym1 |= 1;
+	delta_exp = xexp - yexp;
+    if (!no_round && (force_round || (((x ^ y) & SIGN) == 0))) {        
+			fprintf(stderr,"xnormzero=%d ynormzero=%d \n",is_norm_zero(x),is_norm_zero(y));			
+		if ( (xexp != yexp) && (force_round || (!(is_norm_zero(x)) && !(is_norm_zero(y))))) {
+			//Round process is set 1 to auxilary bit of not shifted summand only
+			if (delta_exp > 0)  xm1 |= 1;
+            else ym1 |= 1;
           if (arithmetic_op_debug) fprintf( stderr, "add: ROUND: xm=%015llo ym=%015llo xm1=%018llo ym1=%018llo\n", xm, ym, xm1, ym1 );
        }
     }
-
-    delta_exp = xexp - yexp;
+    
     if (arithmetic_op_debug) fprintf( stderr, "add03: delta_exp=%d xm1=%018llo ym1=%018llo\n", delta_exp, xm1, ym1 );
 
     /* Mantissa alignment */
-    if (delta_exp > 0) ym1 >>= (xexp - yexp);
-    else if (delta_exp < 0) xm1 >>= (xexp - yexp);
+    if (delta_exp >= 0) {
+		if (delta_exp < 37) ym1 >>= delta_exp;
+		else ym1 = 0;
+		rexp = xexp;
+	}
+    else {
+		if ((-delta_exp) < 37) xm1 >>= -delta_exp;
+		else xm1 = 0;
+		rexp = yexp;
+	}
+	
+	/* Sign setting - only here, if do it before rounding, we can get wrong results */
+	xm1 *= xs; 
+	ym1 *= ys;	
 
-    /* Addition */
-    rexp = xexp;
+    /* Addition */   
     if (arithmetic_op_debug) fprintf( stderr, "add04: rexp=%d xm1=%018llo ym1=%018llo\n", rexp, xm1, ym1 );
 
     rr = xm1 + ym1;
@@ -1404,7 +1426,7 @@ t_stat new_addition_v44 (t_value *result, t_value x, t_value y, int no_round, in
     rs = 1;
     if (rr < 0) {
       rs = -1;
-      rr = rr * rs;
+	  rr = -rr;
     }
     if (arithmetic_op_debug) fprintf( stderr, "add06: rr=%018llo\n", rr );
     r = (rr & (MANTISSA|BIT37|BIT38));
@@ -1413,7 +1435,6 @@ t_stat new_addition_v44 (t_value *result, t_value x, t_value y, int no_round, in
     r_bit = 0;
     shift_count = 0;
 
-    // here must be rouding
     /* normalization to right */
     if (r & (BIT37<<1)) {
         if (arithmetic_op_debug) fprintf( stderr, "add: C1: NORM_R: rexp=%d r=%018llo\n", rexp, r );
@@ -1508,14 +1529,6 @@ static int  get_number_sign( t_value num )
   return( num & SIGN ? -1 : 1 );
 }
 
-
-static int  is_norm_zero( t_value num )
-{
-    if ( ((num & SIGN) == 0) && ((num & MANTISSA) == 0) && ((num & EXPONENT) == 0))
-        return 1;
-    else
-        return 0;
-}   
 
 
 static t_value  norm_zero( void )
@@ -2409,7 +2422,7 @@ t_stat ext_io_operation (int a1, t_value * sum)
  */
 t_stat cpu_one_inst ()
 {
-	int addr_tags, op, a1, a2, a3, n = 0;
+	int addr_tags, op, a1, a2, a3, n = 0, force_round = 0;
 	t_value x, y, t;
 	t_stat err;
 	//unsigned __int64 t1;
@@ -2471,7 +2484,7 @@ t_stat cpu_one_inst ()
 		}
 add:		
                 //if (new_add) err = new_addition_v20 (&regRR, x, y, op >> 4 & 1, op >> 5 & 1);
-                if (new_add) err = new_addition_v44 (&regRR, x, y, op >> 4 & 1, op >> 5 & 1);
+                if (new_add) err = new_addition_v44 (&regRR, x, y, op >> 4 & 1, op >> 5 & 1, force_round);
                 else err = addition (&regRR, x, y, op >> 4 & 1, op >> 5 & 1);
 add2:
 		if (err) return err;
@@ -2491,8 +2504,48 @@ add2:
                     err = new_arithmetic_op( &regRR, x, y, op );
 		    goto add2;
                 }
-		x = mosu_load (a1);
-		y = mosu_load (a2) ^ SIGN;
+		x = mosu_load (a1);		
+				
+		/* When one of operands is machine zero, rounding should not be performed. 
+		But if we take machine zero as 2nd operand, invert the sign and call addition,
+		it already will not be machine zero and can be rounded. Opposite case also may occur,
+		when the 2nd operand is -0 and will not be rounded after sign inversion (as machine zero).
+		
+		Non-inverting the sign of machine zero and then call addition is wrong decision,
+		because in this case rounding logic (based on signs) may became broken for -0. 
+		Same problems if non-inverting the sign of both -0 and machine zero.
+		Right way is to detect machine zero and in this case switch rounding off 
+		(by opcode correction), then call addition.
+		
+		When the 2nd operand is -0, and the 1st is positive, rounding should be ON.
+		To do this, inverting/noninverting the sign is unsufficient. When to decide
+		round or not, it should be known: ADD or SUB is calculating now.
+		
+		So, LOY introduced forced rounding as a feature of new_addition_v44,
+		and set it as "1" on conditions listed above.
+		
+		This -0 subtraction didn't covered by General Arithmetic Test 6 of 1963,
+		but tested in test_02.simh and also seperetely by LOY.*/ 
+		
+		y = mosu_load (a2);
+		if (arithmetic_op_debug) fprintf(stderr,"sub01: y=%15llo \n",y);
+		if (is_norm_zero(y)) {
+			//bit5 = 1 in opcode means round OFF
+			if (arithmetic_op_debug) fprintf(stderr,"sub02a: NORMZERO DETECTED, opcode=%o, ",op);
+			op |= 0b10000;
+			if (arithmetic_op_debug) fprintf(stderr,"modified opcode=%o \n",op);
+		}
+		// "-0" processing
+		if ( !((y & SIGN) == 0) && ((y & MANTISSA) == 0) && ((y & EXPONENT) == 0)) {
+		    if ( ((x & SIGN) == 0) && !(is_norm_zero(x))) force_round = 1;
+		    if (arithmetic_op_debug) fprintf(stderr,"sub02b: MINUSZERO DETECTED, force_round=%d \n",force_round);
+		}
+
+		
+		y ^= SIGN;
+		if (arithmetic_op_debug) fprintf(stderr,"sub03: y_after_inversion=%15llo \n",y);
+				
+		
 		goto add;
 
 
@@ -2511,7 +2564,7 @@ add2:
 		x = mosu_load (a1) & ~SIGN;
 		y = mosu_load (a2) | SIGN;
 		if ((op==003) || (op==023)) no_norm=0; 
-                if (new_add) err = new_addition_v44 (&regRR, x, y, 1, no_norm);
+                if (new_add) err = new_addition_v44 (&regRR, x, y, 1, no_norm, force_round);
                 //if (new_add) err = new_addition_v20 (&regRR, x, y, 1, no_norm);
                 else err = addition (&regRR, x, y, 1, no_norm);
 		goto add2;

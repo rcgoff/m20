@@ -272,3 +272,6 @@ clean:
 
 cleanru:
 	del $(M20ru_OBJS)
+
+test: 	all
+	..\scripts\run_tests .\m20 ..\complex_test_1963

@@ -33,13 +33,13 @@ for /r %%I in (test_*.simh) do (
         echo ERROR
         set /a failed_count=failed_count+1
     ) else (
-        findstr /c:"Assertion failed" "%%~nI_debug.txt"
-        if errorlevel 0 (
-            echo FAILED
-            set /a failed_count=failed_count+1
-        ) else (
+        findstr /c:"Assertion failed" "%%~nI_debug.txt" >nul
+        if errorlevel 1 (
             echo SUCCESS
             set /a success_count=success_count+1
+        ) else (
+	    echo FAILED
+            set /a failed_count=failed_count+1              
         )
     )
 )
@@ -48,8 +48,8 @@ rem Get test results
 set /a executed_count=success_count+failed_count
 echo Executed %executed_count% tests, %success_count% success, %failed_count% failed
 
-if failed_count 0 (
-    exit 0
+if %failed_count% == 0 (
+    exit /b 0
 ) else (
-    exit 1
+    exit /b 1
 )

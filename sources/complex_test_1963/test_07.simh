@@ -44,7 +44,7 @@ attach cdp test_07.cdp
 ;
 de DRUM_0_ACCESS_MODE 1
 ;
-att drum0 test_07.drum0
+att drum0 kt_1963.drum0
 att drum1 test_07.drum1
 att drum2 test_07.drum2
 ;

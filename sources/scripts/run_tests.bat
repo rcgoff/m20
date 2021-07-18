@@ -1,9 +1,12 @@
 @echo off
+rem Test script written by Stepan Anokhin, debugged by Leonid Yadrennikov
+rem May 2021
 
 set m20=%~f1
 set test_dir=%~f2
 set timestamp=%DATE:/=-%_%TIME::=-%
 set timestamp=%timestamp: =%
+set timestamp=%timestamp:,=.%
 set run_dir=%test_dir%\run-%timestamp%-%RANDOM%
 
 echo RUN TESTS

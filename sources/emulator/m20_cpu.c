@@ -67,6 +67,7 @@
  *  24-Jun-2021  LOY  is_norm_zero moved; new_addition_v44 bugfix for linux gcc (>> more than 36)
  *  25-Jun-2021  LOY  -0 subtraction in new_addition_v44 processed correctly. 
  *			Bugfix in shift commands (14,34,54,74) for linux.
+ *  18-Jul-2021  LOY  Type mismatch fixed in sim_instr. No more warnings during visual studio compile.
  */
 
 #include "m20_defs.h"
@@ -3164,7 +3165,8 @@ t_stat sim_instr (void)
     t_stat r;
     int ticks;
     int addr_tags, a1, a2, a3, t_sw, op, i;
-    t_value m1,m2,m3, t_ra, t_rr;
+    uint16 t_ra;
+    t_value m1,m2,m3,t_rr;
     char c1,c2,c3;
     double old_delay, instr_time;
 

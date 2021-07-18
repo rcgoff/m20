@@ -80,7 +80,7 @@ ex RPU4
 ;de USE_NEW_DIV 1
 ;de USE_NEW_SQRT 1
 ;
-load test_11b.m20
+load kt_1963_load_from_drum.m20
 ;
 ;break -e 1[2]
 ;break -e 4[2]

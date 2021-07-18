@@ -92,7 +92,7 @@ de USE_ADD_SBST 1
 ;de USE_NEW_SQRT 1
 ;de USE_ADD_SBST 1
 ;
-load test_02.m20
+load kt_1963_load_from_drum.m20
 ;
 ;break -e 1[10]
 ;break -e 1[2]

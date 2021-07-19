@@ -2057,6 +2057,9 @@ return SCPE_OK;
 
 static t_stat sim_os_ttrun (void)
 {
+	/*rc begin*/	
+	fprintf(sim_deb, "%s \n" , "sim_console: rc: sim__os_ttrun, we're here");
+	/*rc end*/
 if ((std_input) &&                                      /* If Not Background process? */
     (std_input != INVALID_HANDLE_VALUE) &&
     (!GetConsoleMode(std_input, &saved_mode) ||         /* Set mode to RAW */

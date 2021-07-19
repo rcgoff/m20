@@ -33,7 +33,7 @@ jobs:
         run: |
           .\build_mingw64.bat
   visual-studio:
-    runs-on: windows-2016
+    runs-on: windows-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v2.0.0

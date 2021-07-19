@@ -5337,6 +5337,9 @@ sim_is_running = 1;                                     /* flag running */
 if (sim_ttrun () != SCPE_OK) {                          /* set console mode */
     sim_is_running = 0;                                 /* flag idle */
     sim_ttcmd ();
+	/*rc */
+	fprintf(sim_deb, "%s", "sim_ttrun returned an error \n");
+	/*rc*/
     return SCPE_TTYERR;
     }
 if ((r = sim_check_console (30)) != SCPE_OK) {          /* check console, error? */

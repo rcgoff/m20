@@ -2061,14 +2061,15 @@ if ((std_input) &&                                      /* If Not Background pro
     (std_input != INVALID_HANDLE_VALUE) &&
     (!GetConsoleMode(std_input, &saved_mode) ||         /* Set mode to RAW */
      !SetConsoleMode(std_input, RAW_MODE)))
-	 /*rc begin*/	
-	fprintf(sim_deb, "%s \n" , "sim_console: rc: sim_os_ttrun, we're on error if-branch");
+	 /*rc begin*/
+	 {	 
+	fprintf(sim_deb, "%s \n" , "sim_console: rc: sim_os_ttrun, we're on erroneous if-branch");
 	fprintf(sim_deb, "%s %d \n" , "sim_console: rc: sim_os_ttrun, GetConsoleMode: ",GetConsoleMode(std_input, &saved_mode));
 	fprintf(sim_deb, "%s %d \n" , "sim_console: rc: sim_os_ttrun, SetConsoleMode: ",SetConsoleMode(std_input, RAW_MODE));
-	fprintf(sim_deb, "%s %d \n" , "sim_console: rc: sim_os_ttrun, std_input as boolean: ",(std_input) );
 	fprintf(sim_deb, "%s %d \n" , "sim_console: rc: sim_os_ttrun, std_input: ",std_input );
 	/*rc end*/
     return SCPE_TTYERR;
+	 } //rc
 if (sim_log) {
     fflush (sim_log);
     _setmode (_fileno (sim_log), _O_BINARY);

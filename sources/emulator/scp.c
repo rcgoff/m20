@@ -5340,7 +5340,7 @@ if (sim_ttrun () != SCPE_OK) {                          /* set console mode */
 	/*rc */
 	//t_stat errval;
 	//errval=sim_ttrun();
-	fprintf(sim_deb, "%s %d \n" , "scp: rc: sim_ttrun returned an error", sim_ttrun);
+	fprintf(sim_deb, "%s %d \n" , "scp: rc: sim_ttrun returned an error", sim_ttrun()-SCPE_BASE );
 	/*rc*/
     return SCPE_TTYERR;
     }

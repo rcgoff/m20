@@ -2058,7 +2058,11 @@ return SCPE_OK;
 static t_stat sim_os_ttrun (void)
 {	
 /*rc begin */
+int errVal;
 fprintf(sim_deb, "%s %d \n" , "sim_console: rc: sim_os_ttrun, GetConsoleMode: ",GetConsoleMode(std_input, &saved_mode));
+errVal=GetLastError();
+fprintf(sim_deb, "%s %d \n" , "sim_console: rc: sim_os_ttrum, Error code returned by GetConsoleMode: ", errVal);
+fprintf(sim_deb, "%s %d \n" , "sim_console: rc: sim_os_ttrum, Mode returned by GetConsoleMode: ", saved_mode);
 fprintf(sim_deb, "%s %d \n" , "sim_console: rc: sim_os_ttrun, SetConsoleMode: ",SetConsoleMode(std_input, RAW_MODE));
 fprintf(sim_deb, "%s %d \n" , "sim_console: rc: sim_os_ttrun, std_input: ",std_input );
 /*rc end*/

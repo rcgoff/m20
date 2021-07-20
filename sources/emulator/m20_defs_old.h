@@ -21,6 +21,19 @@
 #define _M20_DEFS_H_    0
 
 #include "sim_defs_old.h"				/* simulator definitions */
+/*rcgoff-added-begin*/
+/* SCP API shim.
+
+   The SCP API for version 4.0 introduces a number of "pointer-to-const"
+   parameter qualifiers that were not present in the 3.x versions.  To maintain
+   compatibility with the earlier versions, the new qualifiers are expressed as
+   "CONST" rather than "const".  This allows macro removal of the qualifiers
+   when compiling for SIMH 3.x.
+*/
+#ifndef CONST
+#define CONST const
+#endif
+/*rcgoff-added-end*/
 
 #if !defined(USE_INT64) 
 #error "M-20 wanted 64b values because M-20 have 45b values!"

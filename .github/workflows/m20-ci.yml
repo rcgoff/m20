@@ -40,7 +40,7 @@ jobs:
         uses: actions/upload-artifact@v2
         if: ${{ failure() }}
         with:
-          name: visual-studio-test-results
+          name: mingw-test-results
           path: sources/complex_test_1963/run-*
           retention-days: 7
   visual-studio:

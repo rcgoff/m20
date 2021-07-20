@@ -57,8 +57,8 @@
   line in the .gitattributes file.
  */
 #if !defined(SIM_GIT_COMMIT_ID)
-#define SIM_GIT_COMMIT_ID $Format:%H$
-#define SIM_GIT_COMMIT_TIME $Format:%aI$
+#define SIM_GIT_COMMIT_ID 6728b3f48f6b50b0dca44133f8ba79199cd160db
+#define SIM_GIT_COMMIT_TIME 2021-06-22T03:54:25-07:00
 #endif
 
 /*

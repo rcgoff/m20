@@ -20,7 +20,6 @@
 #ifndef _M20_DEFS_H_
 #define _M20_DEFS_H_    0
 
-#include "sim_defs_old.h"				/* simulator definitions */
 /*rcgoff-added-begin*/
 /* SCP API shim.
 
@@ -34,6 +33,7 @@
 #define CONST const
 #endif
 /*rcgoff-added-end*/
+#include "sim_defs_old.h"				/* simulator definitions */
 
 #if !defined(USE_INT64) 
 #error "M-20 wanted 64b values because M-20 have 45b values!"

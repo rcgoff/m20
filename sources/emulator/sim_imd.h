@@ -1,9 +1,7 @@
 /*************************************************************************
  *                                                                       *
- * $Id: sim_imd.h 1987 2008-07-08 03:25:57Z hharte $                     *
- *                                                                       *
- * Copyright (c) 2007-2008 Howard M. Harte.                              *
- * http://www.hartetec.com                                               *
+ * Copyright (c) 2007-2020 Howard M. Harte.                              *
+ * https://github.com/hharte                                             *
  *                                                                       *
  * Permission is hereby granted, free of charge, to any person obtaining *
  * a copy of this software and associated documentation files (the       *
@@ -36,17 +34,10 @@
  *     See: http://www.classiccmp.org/dunfield/img/index.htm             *
  *     for details on the ImageDisk format and other utilities.          *
  *                                                                       *
- * Environment:                                                          *
- *     User mode only                                                    *
- *                                                                       *
  *************************************************************************/
 
 #ifndef SIM_IMD_H_
 #define SIM_IMD_H_     0
-
-#if !defined(USE_SIM_IMD)
-#error This simulator must be compiled with USE_SIM_IMD defined
-#else
 
 #include "sim_defs.h"
 
@@ -91,6 +82,8 @@ typedef struct {
 #define IMD_MODE_300K_MFM       4
 #define IMD_MODE_250K_MFM       5
 
+#define IMD_MAX_SECTSIZE        6
+
 #define IMD_MODE_FM(x)      (x <= IMD_MODE_250K_FM)
 #define IMD_MODE_MFM(x)     (x >= IMD_MODE_500K_MFM)
 
@@ -122,7 +115,7 @@ typedef struct {
 extern DISK_INFO *diskOpen(FILE *fileref, uint32 isVerbose);
 extern DISK_INFO *diskOpenEx(FILE *fileref, uint32 isVerbose, DEVICE *device, uint32 debugmask, uint32 verbosedebugmask);
 extern t_stat diskClose(DISK_INFO **myDisk);
-extern t_stat diskCreate(FILE *fileref, char *ctlr_comment);
+extern t_stat diskCreate(FILE *fileref, const char *ctlr_comment);
 extern uint32 imdGetSides(DISK_INFO *myDisk);
 extern uint32 imdIsWriteLocked(DISK_INFO *myDisk);
 
@@ -139,7 +132,5 @@ extern t_stat trackWrite(DISK_INFO *myDisk,
                uint8 fillbyte,
                uint32 *flags);
 extern t_stat assignDiskType(UNIT *uptr);
-
-#endif /* USE_SIM_IMD */
 
 #endif

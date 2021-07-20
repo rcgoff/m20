@@ -1,6 +1,6 @@
 /* sim_serial.h: OS-dependent serial port routines header file
 
-   Copyright (c) 2008, J. David Bryan
+   Copyright (c) 2008, J. David Bryan, Mark Pizzolato
 
    Permission is hereby granted, free of charge, to any person obtaining a
    copy of this software and associated documentation files (the "Software"),
@@ -24,11 +24,22 @@
    in this Software without prior written authorization from the author.
 
    07-Oct-08    JDB     [serial] Created file
+   22-Apr-12    MP      Adapted from code originally written by J. David Bryan
+
 */
 
 
 #ifndef SIM_SERIAL_H_
 #define SIM_SERIAL_H_    0
+
+#ifdef  __cplusplus
+extern "C" {
+#endif
+
+#ifndef SIMH_SERHANDLE_DEFINED
+#define SIMH_SERHANDLE_DEFINED 0
+typedef struct SERPORT *SERHANDLE;
+#endif /* SERHANDLE_DEFINED */
 
 #if defined (_WIN32)                        /* Windows definitions */
 
@@ -43,7 +54,7 @@
 #endif
 #include <windows.h>
 #if !defined(INVALID_HANDLE)
-#define INVALID_HANDLE  INVALID_HANDLE_VALUE
+#define INVALID_HANDLE  (SERHANDLE)INVALID_HANDLE_VALUE
 #endif /* !defined(INVALID_HANDLE) */
 
 #elif defined (__unix__) || defined (__APPLE__) || defined (__hpux) /* UNIX definitions */
@@ -57,30 +68,21 @@
 #include <sys/ioctl.h>
 
 #if !defined(INVALID_HANDLE)
-#define INVALID_HANDLE  -1
+#define INVALID_HANDLE  ((SERHANDLE)(void *)-1)
 #endif /* !defined(INVALID_HANDLE) */
 
 #elif defined (VMS)                             /* VMS definitions */
 #if !defined(INVALID_HANDLE)
-#define INVALID_HANDLE  (uint32)(-1)
+#define INVALID_HANDLE  ((SERHANDLE)(void *)-1)
 #endif /* !defined(INVALID_HANDLE) */
 
 #else                                           /* Non-implemented definitions */
 
 #if !defined(INVALID_HANDLE)
-#define INVALID_HANDLE  -1
+#define INVALID_HANDLE  ((SERHANDLE)(void *)-1)
 #endif /* !defined(INVALID_HANDLE) */
 
 #endif  /* OS variants */
-
-#ifndef SIMH_SERHANDLE_DEFINED
-#define SIMH_SERHANDLE_DEFINED 0
-#if defined (_WIN32)                            /* Windows definitions */
-typedef void *SERHANDLE;
-#else                                           /* all other platforms */
-typedef int SERHANDLE;
-#endif
-#endif /* SERHANDLE_DEFINED */
 
 
 /* Common definitions */
@@ -89,11 +91,15 @@ typedef int SERHANDLE;
 #include "sim_tmxr.h"                           /* need TMLN definition and modem definitions */
 
 extern SERHANDLE sim_open_serial    (char *name, TMLN *lp, t_stat *status);
-extern t_stat    sim_config_serial  (SERHANDLE port, const char *config);
+extern t_stat    sim_config_serial  (SERHANDLE port, CONST char *config);
 extern t_stat    sim_control_serial (SERHANDLE port, int32 bits_to_set, int32 bits_to_clear, int32 *incoming_bits);
 extern int32     sim_read_serial    (SERHANDLE port, char *buffer, int32 count, char *brk);
 extern int32     sim_write_serial   (SERHANDLE port, char *buffer, int32 count);
 extern void      sim_close_serial   (SERHANDLE port);
-extern t_stat    sim_show_serial    (FILE* st, DEVICE *dptr, UNIT* uptr, int32 val, char* desc);
+extern t_stat    sim_show_serial    (FILE* st, DEVICE *dptr, UNIT* uptr, int32 val, CONST char* desc);
+
+#ifdef  __cplusplus
+}
+#endif
 
 #endif

@@ -47,6 +47,8 @@
  *     * %D    - Inserts the name of the device     (e.g. "DTA").
  *     * %U    - Inserts the name of the unit       (e.g. "DTA0").
  *     * %S    - Inserts the current simulator name (e.g. "PDP-10")
+ *     * %C    - Inserts the current value of the sim_vm_interval_units string
+ *     * %I    - Inserts the current value of the sim_vm_step_unit string
  *     * %#s   - Inserts the string suppled in the "#"th optional argument to the help
  *               routine.  # starts with 1.  Any embedded newlines will cause following
  *               text to be indented.
@@ -145,20 +147,20 @@
  *  To make use of this type of help in your device, create (or replace) a help routine with one that
  *   calls scp_help.  Most of the arguments are the same as those of the device help routine.
  *
- *  t_stat scp_help (FILE *st, struct sim_device *dptr,
- *                   struct sim_unit *uptr, int flag, const char *help, char *cptr, ...)
+ *  t_stat scp_help (FILE *st, DEVICE *dptr,
+ *                   UNIT *uptr, int flag, const char *help, char *cptr, ...)
  *
  *  If you need to pass the variable argument list from another routine, use:
  * 
- *  t_stat scp_vhelp (FILE *st, struct sim_device *dptr,
- *                    struct sim_unit *uptr, int flag, const char *help, char *cptr, va_list ap)
+ *  t_stat scp_vhelp (FILE *st, DEVICE *dptr,
+ *                    UNIT *uptr, int flag, const char *help, char *cptr, va_list ap)
  *
  *  To obtain the help from an external file (Note this reads the entire file into memory):
- *  t_stat scp_helpFromFile (FILE *st, struct sim_device *dptr,
- *                            struct sim_unit *uptr, int flag, const char *helpfile, char *cptr, ...)
+ *  t_stat scp_helpFromFile (FILE *st, DEVICE *dptr,
+ *                            UNIT *uptr, int flag, const char *helpfile, char *cptr, ...)
  *  and for va_list:
- *  t_stat scp_vhelpFromFile (FILE *st, struct sim_device *dptr,
- *                            struct sim_unit *uptr, int flag, const char *helpfile, char *cptr, va_list ap) {
+ *  t_stat scp_vhelpFromFile (FILE *st, DEVICE *dptr,
+ *                            UNIT *uptr, int flag, const char *helpfile, char *cptr, va_list ap) {
  *
  * dptr and uptr are only used if the %D and/or %U escapes are encountered.
  * help is the help text; helpfile is the help file name.

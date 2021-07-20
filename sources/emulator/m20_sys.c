@@ -388,7 +388,7 @@ t_stat m20_dump (FILE *of, char *fnam)
 /*
  *  Loader/dumper
  */
-t_stat sim_load (FILE *fi, char *cptr, char *fnam, int dump_flag)
+t_stat sim_load (FILE *fi, CONST char *cptr, CONST char *fnam, int dump_flag)
 {
     if (dump_flag) return m20_dump (fi, fnam);
 
@@ -588,15 +588,17 @@ t_stat parse_instruction (char *cptr, t_value *val, int32 sw)
  * Outputs:
  *	status  = error status
  */
-t_stat parse_sym (char *cptr, t_addr addr, UNIT *uptr, t_value *val, int32 sw)
+t_stat parse_sym (CONST char *cptr, t_addr addr, UNIT *uptr, t_value *val, int32 sw)
 {
     int32 i;
+	char *cptr_copy;
 
     if (uptr && (uptr != &cpu_unit))		/* must be CPU */
 	return SCPE_ARG;
 
-    cptr = skip_spaces (cptr);			/* absorb spaces */
-    if (! parse_instruction (cptr, val, sw))	/* symbolic parse? */
+    cptr_copy = cptr;
+	cptr_copy = skip_spaces (cptr_copy);			/* absorb spaces */
+    if (! parse_instruction (cptr_copy, val, sw))	/* symbolic parse? */
 	return SCPE_OK;
 
     val[0] = 0;
@@ -604,7 +606,7 @@ t_stat parse_sym (char *cptr, t_addr addr, UNIT *uptr, t_value *val, int32 sw)
 	if (*cptr == 0) return SCPE_OK;
 	if (*cptr < '0' || *cptr > '7') return SCPE_ARG;
 	val[0] = (val[0] << 3) | (*cptr - '0');
-	cptr = skip_spaces (cptr+1);		/* next char */
+	cptr_copy = skip_spaces (cptr_copy+1);		/* next char */
     }
     if (*cptr != 0) return SCPE_ARG;
 

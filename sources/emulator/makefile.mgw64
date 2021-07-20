@@ -180,7 +180,7 @@ $(SIM_SERIAL).obj: $(SIM_SERIAL).c
 	$(CC) -c $(cc_flags) -o $(SIM_SERIAL).obj $(SIM_SERIAL).c
 
 $(SIM_DISK).obj: $(SIM_DISK).c 
-	$(CC) -c $(cc_flags) -o $(SIM_DISK).obj $(sim_disk).c
+	$(CC) -c $(cc_flags) -o $(SIM_DISK).obj $(SIM_DISK).c
 #$(SIM_DISK).obj: sim_disk_mingw64.c 
 #	$(CC) -c $(cc_flags) -o $(SIM_DISK).obj sim_disk_mingw64.c 
 

@@ -32,6 +32,17 @@ jobs:
         working-directory: sources/emulator
         run: |
           .\build_mingw64.bat
+      - name: Run tests
+        working-directory: sources/emulator
+        run: |
+          .\build_mingw64.bat test
+      - name: Archive test results on failure
+        uses: actions/upload-artifact@v2
+        if: ${{ failure() }}
+        with:
+          name: visual-studio-test-results
+          path: sources/complex_test_1963/run-*
+          retention-days: 7
   visual-studio:
     runs-on: windows-latest
     steps:

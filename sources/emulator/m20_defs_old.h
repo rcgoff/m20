@@ -4,6 +4,7 @@
  *
  * Copyright (c) 2009, Serge Vakulenko
  * Copyright (c) 2014, Dmitry Stefankov
+ * Copyrigth (c) 2021, Leonid Yadrennikov
  *
  * $Id$
  *
@@ -14,6 +15,7 @@
  *  20-Nov-2014  DVS  Updated
  *  12-Jan-2015  DVS  Minor update
  *  16-Jan-2015  DVS  Updated tape and drum definitions
+ *  20-Jul-2021  LOY  Added CONST definition for build utility routines with new SIMH
  *
  */
 

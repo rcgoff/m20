@@ -3,12 +3,14 @@
  * Purpose:  Convert M-20 format file to punch card format file
  *
  * Copyright (c) 2015, Dmitry Stefankov
+ * Copyrigth (c) 2021, Leonid Yadrennikov
  *
  * $Id$
  *
  * Revision History.
  *
  *  10-Feb-2015  DVS  Initial Implemementation
+ *  20-Jul-2021  LOY  m20_defs_old as temporary hack for build with new SIMH version
  *
  */
 

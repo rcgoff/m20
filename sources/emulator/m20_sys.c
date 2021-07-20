@@ -4,6 +4,7 @@
  *
  * Copyright (c) 2009, Serge Vakulenko
  * Copyright (c) 2014, Dmitry Stefankov
+ * Copyright (c) 2021, Leonid Yadrennikov
  *
  * $Id$
  *
@@ -29,6 +30,7 @@
  *  04-Dec-2014  DVS  Added debug dump for regs and mem
  *  07-Dec-2014  DVS  Added decimal numbers input
  *  21-Dec-2014  DVS  Added opcode and modifiers for cpu trace output
+ *  20-Jul-2021  LOY  Updated some definitions for new SIMH version (CONST)
  *
  */
 

@@ -591,14 +591,12 @@ t_stat parse_instruction (char *cptr, t_value *val, int32 sw)
 t_stat parse_sym (CONST char *cptr, t_addr addr, UNIT *uptr, t_value *val, int32 sw)
 {
     int32 i;
-	char *cptr_copy;
-
+	
     if (uptr && (uptr != &cpu_unit))		/* must be CPU */
 	return SCPE_ARG;
 
-    cptr_copy = cptr;
-	cptr_copy = skip_spaces (cptr_copy);			/* absorb spaces */
-    if (! parse_instruction (cptr_copy, val, sw))	/* symbolic parse? */
+    cptr = skip_spaces (cptr);			/* absorb spaces */
+    if (! parse_instruction (cptr, val, sw))	/* symbolic parse? */
 	return SCPE_OK;
 
     val[0] = 0;
@@ -606,7 +604,7 @@ t_stat parse_sym (CONST char *cptr, t_addr addr, UNIT *uptr, t_value *val, int32
 	if (*cptr == 0) return SCPE_OK;
 	if (*cptr < '0' || *cptr > '7') return SCPE_ARG;
 	val[0] = (val[0] << 3) | (*cptr - '0');
-	cptr_copy = skip_spaces (cptr_copy+1);		/* next char */
+	cptr = skip_spaces (cptr+1);		/* next char */
     }
     if (*cptr != 0) return SCPE_ARG;
 

@@ -17,6 +17,8 @@
  *
  */
 
+#undef putc
+#define putc fputc
 #ifndef _M20_DEFS_H_
 #define _M20_DEFS_H_    0
 

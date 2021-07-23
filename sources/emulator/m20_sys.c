@@ -12,7 +12,7 @@
  *
  * sim_load()   - loading and dumping memory and CPU state
  *		  in a way, specific for M20 architecture
- * fprint_sym() - print a machune instruction using
+ * fprint_sym() - print a machine instruction using
  *  		  opcode mnemonic or in a digital format
  * parse_sym()	- scan a string and build an instruction
  *		  word from it

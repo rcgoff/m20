@@ -53,11 +53,11 @@ function execute_test() {
   preprocess_test "$current_test"
   if command time --output "$current_test.time" --format "%es" --quiet timeout --foreground "$timeout_interval" "$M20" "$current_test" 2>"$current_test.output" >&2; then
     local debug_file="${current_test%.simh}_debug.txt"
-    if ! grep --quiet "Assertion failed" "$debug_file"; then
-      echo "$(success SUCCESS) ($(cat "$current_test.time"))"
-    else
+    if ! grep --quiet "Breakpoint" "$debug_file"; then
       echo "$(error FAILED) ($(cat "$current_test.time"))"
       return 1
+    else      
+      echo "$(success SUCCESS) ($(cat "$current_test.time"))"      
     fi
   else
     EXIT_CODE=$?

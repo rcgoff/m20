@@ -49,6 +49,7 @@ load test_net_0_01.m20
 ;break -e 1[10]
 ;break -e 1[2]
 ;break -e 1[1]
+break -e 0121[1]
 ;show break all
 ;
 ;

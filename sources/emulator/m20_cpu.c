@@ -68,6 +68,7 @@
  *  25-Jun-2021  LOY  -0 subtraction in new_addition_v44 processed correctly. 
  *			Bugfix in shift commands (14,34,54,74) for linux.
  *  18-Jul-2021  LOY  Type mismatch fixed in sim_instr. No more warnings during visual studio compile.
+ *  24-Jul-2021  LOY  Fixed negative rexp bug in new_addition_v44. Now new_addition_v44 passes all tests.
  */
 
 #include "m20_defs.h"
@@ -1356,6 +1357,15 @@ static int  is_norm_zero( t_value num )
         return 0;
 }
 
+static t_value  norm_zero( void )
+{
+  t_value t;
+
+  t = 0 | ((t_value)0 << BITS_36);
+
+  return ( t );
+}
+
 
 /*
  * Two numbers addition. If required then blocking of rounding and normalization.
@@ -1430,7 +1440,7 @@ t_stat new_addition_v44 (t_value *result, t_value x, t_value y, int no_round, in
       rs = -1;
 	  rr = -rr;
     }
-    if (arithmetic_op_debug) fprintf( stderr, "add06: rr=%018llo\n", rr );
+    if (arithmetic_op_debug) fprintf( stderr, "add06: rr=%018llo rs=%d\n", rr, rs );
     r = (rr & (MANTISSA|BIT37|BIT38));
     if (arithmetic_op_debug) fprintf( stderr, "add07: rr=%018llo\n", rr );
 
@@ -1484,12 +1494,13 @@ t_stat new_addition_v44 (t_value *result, t_value x, t_value y, int no_round, in
 
     /* check for machine zero */
     if ((r == 0) || (rexp < 0)) {
-      r = 0; rexp = 0;
-      goto make_result;
+	  fprintf( stderr, "add: return NORMZERO: rexp=%d \n", rexp );
+      r = norm_zero();
+      goto final;
     }
 
     /* Make final result. */
-  make_result:
+ 
     if (arithmetic_op_debug) fprintf( stderr, "add: FINAL 10: r=%018llo\n", r );
 
     r |= (t_value) rexp << BITS_36;
@@ -1510,7 +1521,7 @@ t_stat new_addition_v44 (t_value *result, t_value x, t_value y, int no_round, in
       }
     }
 #endif
-
+ final:
     *result = r | ((x | y) & TAG);
     if (arithmetic_op_debug) fprintf( stderr, "add: FINAL 15: r=%018llo\n\n", r );
 
@@ -1531,16 +1542,6 @@ static int  get_number_sign( t_value num )
   return( num & SIGN ? -1 : 1 );
 }
 
-
-
-static t_value  norm_zero( void )
-{
-  t_value t;
-
-  t = 0 | ((t_value)0 << BITS_36);
-
-  return ( t );
-}
 
 
 #define  MATH_OP_ADD       1

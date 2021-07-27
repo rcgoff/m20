@@ -1,6 +1,7 @@
 ; Комплексный тест (тест перфорации №15)
 ; [1963, ЛВИКА]
 ; (2015 Стефанков)
+; (2021 Ядренников)
 ;
 ! del test_15_debug.txt
 ! del test_15.lst
@@ -21,9 +22,9 @@ set lpt  debug
 set cdp  debug
 set mt   debug
 ;de DISABLE_IS2_TRACE 1
-;de DEBUG_DUMP_REGS 1
-;de DEBUG_DUMP_MEM  1
-;de DEBUG_DUMP_MODERM_MEM 1
+de DEBUG_DUMP_REGS 1
+de DEBUG_DUMP_MEM  1
+de DEBUG_DUMP_MODERM_MEM 1
 ;de ARITHMETIC_OP_DEBUG 1
 ;de MEMORY_45_CHECKING 1
 ;de ENABLE_OPCODE_040_HACK 1
@@ -44,18 +45,6 @@ attach cdp test_15.cdp
 de DRUM_0_ACCESS_MODE 1
 ;
 att drum0 kt_1963.drum0
-att drum1 test_15.drum1
-att drum2 test_15.drum2
-;
-;
-de TAPE_3_ACCESS_MODE 1
-;
-att mt0 test_15.mt0
-att mt1 test_15.mt1
-att mt2 test_15.mt2
-att mt3 test_15.mt3
-;
-att -r cdr test_15.cdr
 ;
 ;de RPU1 0100000100010377
 de RPU4  0015000000000770
@@ -68,7 +57,8 @@ ex RPU3
 ex RPU4
 ;
 ;
-;de USE_NEW_ADD 1
+de USE_NEW_ADD 1
+de USE_ADD_SBST 1
 ;de ROUND_ERROR_BITS_OFF 1
 ;de USE_NEW_MULT 1
 ;de USE_NEW_DIV 1
@@ -77,26 +67,33 @@ ex RPU4
 load kt_1963_load_from_drum.m20
 ;
 ;break -e 1[10]
+
+;0006 is a interim stop before card reading.
+;first stop (before proofreading) is processed (g 7 below), second - isn't necessary
+break -e 0006[2]
 ;show break all
 ;
 ;
 echo Run
 run
 ;
-show queue
-show time
+;;show queue
+;;show time
 ;show throttle
+
+;reading the same card output file
+att -r cdr test_15.cdp 
 g 7
 ;
-show queue
-show time
+;;show queue
+;;show time
 ;
-ex 1-471
-ex -m 1-471
+;;ex 1-471
+;;ex -m 1-471
 ;
 ;ex 1000-1147
 ;ex -m 1000-1147
-ex 7630-7766
-ex -m 7630-7766
+;;ex 7630-7766
+;;ex -m 7630-7766
 ;
 quit

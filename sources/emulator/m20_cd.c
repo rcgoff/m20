@@ -3,6 +3,7 @@
  * Purpose:  M-20 simulator card reader (punch)
  *
  * Copyright (c) 2014, Dmitry Stefankov
+ * Copyright (c) 2014, Leonid Yadrennikov
  *
  * $Id$
  *
@@ -23,6 +24,8 @@
  *  27-Dec-2014  DVS  Added check for card read beyond memory
  *  17-Jan-2015  DVS  Added another binary-decimal input form
  *  25-Jan-2015  DVS  Added more debugging to see input errors
+ *  28-Jul-2021  LOY  CDP: zone_buf_addr is taken into account;
+ *                    Fix erroneous output (type mismatch)
  *
  */
 
@@ -664,6 +667,7 @@ t_stat punch_card (int start_addr, int end_addr, int zone_buf_addr, int add_only
     if (sim_deb && cdp_dev.dctrl) {
       fprintf (sim_deb, "cdp: punch_card: zone_buf_addr=%d\n",zone_buf_addr);
     }
+	msu_drum_print_last_pos = zone_buf_addr;
 #if 0
     if (zone_buf_addr > 0) {
       if (zone_buf_addr >= MSU_DRUM_PRINT_BUF_SIZE) return STOP_INVARG;
@@ -755,7 +759,7 @@ t_stat punch_card (int start_addr, int end_addr, int zone_buf_addr, int add_only
             }
             else {
                 _snprintf(cdp_line_buf, sizeof(cdp_line_buf),
-                      "1  %01o %02o %04o %04o %04o  0\n", 
+                      "1  %01llo %02llo %04llo %04llo %04llo  0\n", 
                       mcode >> BITS_42 & MAX_ADDR_TAG_VALUE, mcode >> BITS_36 & MAX_OPCODE_VALUE, 
                       mcode >> BITS_24 & MAX_ADDR_VALUE, mcode >> BITS_12 & MAX_ADDR_VALUE, 
                       mcode >> BITS_0 & MAX_ADDR_VALUE );
@@ -790,7 +794,7 @@ t_stat punch_card (int start_addr, int end_addr, int zone_buf_addr, int add_only
      }
      else {
          _snprintf(cdp_line_buf, sizeof(cdp_line_buf),
-                   "1  %01o %02o %04o %04o %04o  1\n\n", 
+                   "1  %01llo %02llo %04llo %04llo %04llo  1\n\n", 
                     mcode >> BITS_42 & MAX_ADDR_TAG_VALUE, mcode >> BITS_36 & MAX_OPCODE_VALUE, 
                     mcode >> BITS_24 & MAX_ADDR_VALUE, mcode >> BITS_12 & MAX_ADDR_VALUE, 
                     mcode >> BITS_0 & MAX_ADDR_VALUE );

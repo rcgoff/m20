@@ -3,7 +3,7 @@
  * Purpose:  M-20 simulator card reader (punch)
  *
  * Copyright (c) 2014, Dmitry Stefankov
- * Copyright (c) 2014, Leonid Yadrennikov
+ * Copyright (c) 2021, Leonid Yadrennikov
  *
  * $Id$
  *

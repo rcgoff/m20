@@ -26,6 +26,7 @@
  *  25-Jan-2015  DVS  Added more debugging to see input errors
  *  28-Jul-2021  LOY  CDP: zone_buf_addr is taken into account;
  *                    Fix erroneous output (type mismatch)
+ *  29-Jul-2021  LOY  Declarations changed to remove compiler warnings
  *
  */
 
@@ -85,17 +86,17 @@ int   cdr_input_codes_count;
 
 static int bcd_print = 0;
 
-t_stat cdr_set_mode (UNIT *uptr, int32 val, char *cptr, void *desc);
-t_stat cdp_set_mode (UNIT *uptr, int32 val, char *cptr, void *desc);
+t_stat cdr_set_mode (UNIT *uptr, int32 val, CONST char *cptr, void *desc);
+t_stat cdp_set_mode (UNIT *uptr, int32 val, CONST char *cptr, void *desc);
 
 t_stat cdr_svc (UNIT *uptr);
 t_stat cdr_boot (int32 unitno, DEVICE *dptr);
-t_stat cdr_attach (UNIT *uptr, char *cptr);
+t_stat cdr_attach (UNIT *uptr, CONST char *cptr);
 t_stat cdr_detach (UNIT *uptr);
 t_stat cdr_reset (DEVICE *dptr);
 
 t_stat cdp_reset (DEVICE *dptr);
-t_stat cdp_attach (UNIT *uptr, char *cptr);
+t_stat cdp_attach (UNIT *uptr, CONST char *cptr);
 t_stat cdp_detach (UNIT *uptr);
 
 
@@ -122,6 +123,7 @@ MTAB cdr_mod[] = {
     { UNIT_INEXTFMT,  UNIT_INEXTFMT,  "input extended format ",     "EXTFMT",   &cdr_set_mode, NULL },
     { 0 }
 };
+
 
 DEVICE cdr_dev = {
     "CDR", &cdr_unit, cdr_reg, cdr_mod,
@@ -167,7 +169,7 @@ DEVICE cdp_dev = {
 
 /* Reader/punch set mode - valid only if not attached */
 
-t_stat cdr_set_mode (UNIT *uptr, int32 val, char *cptr, void *desc)
+t_stat cdr_set_mode (UNIT *uptr, int32 val, CONST char *cptr, void *desc)
 {
     if (sim_deb && cdr_dev.dctrl) fprintf (sim_deb, "cdr: cdr_set_mode(..)\n");
 
@@ -196,7 +198,7 @@ t_stat cdr_reset (DEVICE *dptr)
 
 /* Card reader attach */
 
-t_stat cdr_attach (UNIT *uptr, char *cptr)
+t_stat cdr_attach (UNIT *uptr, CONST char *cptr)
 {
     if (sim_deb && cdr_dev.dctrl) fprintf (sim_deb, "cdr: cdr_attach(..)\n");
 
@@ -511,7 +513,7 @@ t_stat read_card (t_value * csum, t_value * rsum, int * rcodes,
 
 /* Reader/punch set mode - valid only if not attached */
 
-t_stat cdp_set_mode (UNIT *uptr, int32 val, char *cptr, void *desc)
+t_stat cdp_set_mode (UNIT *uptr, int32 val, CONST char *cptr, void *desc)
 {
     if (sim_deb && cdp_dev.dctrl) fprintf (sim_deb, "cdp: cdp_set_mode(..)\n");
 
@@ -536,7 +538,7 @@ t_stat cdp_reset (DEVICE *dptr)
 
 /* Card punch attach */
 
-t_stat cdp_attach (UNIT *uptr, char *cptr)
+t_stat cdp_attach (UNIT *uptr, CONST char *cptr)
 {
     if (sim_deb && cdp_dev.dctrl) fprintf (sim_deb, "cdp: cdp_attach(..)\n");
 

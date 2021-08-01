@@ -1930,7 +1930,7 @@ t_stat new_arithmetic_square_root (t_value *result, t_value x, int op_code)
 
 /*
  *  Multiply arithmetic operation implementation.
- *  According this book: Shura-Bura,Starkman pp. 77-82
+ *  According to this book: Shura-Bura,Starkman pp. 77-82
  *  (russian edition, 1962)
  *  For more straightforward description of the algorithm refer to:
  *  M.A.Kartsev. Arifmetika cifrovykh mashin. Moscow, 1969. Ch. 4.2.2.
@@ -2112,7 +2112,7 @@ t_stat new_arithmetic_mult_op (t_value *result, t_value x, t_value y, int op_cod
  *  Division arithmetic operation implementation.
  *  This is non-restoring division.
  *  According to this books: 
- *  1) Shura-Bura, Starkman (russian edition, 1962), pp. 77-82
+ *  1) Shura-Bura, Starkman (russian edition, 1962), pp. 82-86.
  *  2) Kartsev, Arifmetika cifrovykn masin (rus. 1969), p.499, 504-505.
  *  3) Lebedev, Melnikov, General descript. of BESM, vol.1 (rus. 1959),
  *     p.150-151.

@@ -76,6 +76,7 @@
  *                    2)On norm-to-right, norm first, round later.
  *                    3)Final right-shift to remove auxilary bit.
  *  01-Aug-2021  LOY  Shura-Bura division simplified.
+ *  01-Aug-2021  LOY  Shura-Bura sqrt bugfix (TAG forgotten if machine zero).
  */
 
 #include "m20_defs.h"
@@ -1859,8 +1860,8 @@ t_stat new_arithmetic_square_root (t_value *result, t_value x, int op_code)
 
     x1 = m;
     if (x1 == 0) { 
-        t = norm_zero(); 
-        *result = t;
+        t = norm_zero();
+		*result = t | (x & TAG);
         if (arithmetic_op_debug) fprintf( stderr, "ZERO: t=%015llo\n\n", t );
         return SCPE_OK; 
     }

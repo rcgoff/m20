@@ -2117,8 +2117,8 @@ t_stat new_arithmetic_mult_op (t_value *result, t_value x, t_value y, int op_cod
  *  3) Lebedev, Melnikov, General descript. of BESM, vol.1 (rus. 1959),
  *     p.150-151.
  *  4) https://en.wikipedia.org/wiki/Division_algorithm#Non-restoring_division
- *  Not that Shura-Bura book contains an error on p.85. 
- *  We need 38 digits, not 37 (see comment below).
+ *  Note that Shura-Bura book contains an error on p.85: 
+ *  we need 38 digits, not 37 (see comment below).
  *  
  */
 t_stat new_arithmetic_div_op (t_value *result, t_value x, t_value y, int op_code)

@@ -69,6 +69,12 @@
  *			Bugfix in shift commands (14,34,54,74) for linux.
  *  18-Jul-2021  LOY  Type mismatch fixed in sim_instr. No more warnings during visual studio compile.
  *  24-Jul-2021  LOY  Fixed negative rexp bug in new_addition_v44. Now new_addition_v44 passes all tests.
+ *  01-Aug-2021  LOY  Shura-Bura division quick-and-dirty fix:
+ *                    1)ak_prev now reflects not (n-2), but (n-1) sign of qk. 
+ *                      This error led to twice calculation
+ *                       of the 1st digit and NO calculation of the LSB.
+ *                    2)On norm-to-right, norm first, round later.
+ *                    3)Final right-shift to remove auxilary bit.
  */
 
 #include "m20_defs.h"
@@ -2102,7 +2108,7 @@ t_stat new_arithmetic_mult_op (t_value *result, t_value x, t_value y, int op_cod
 
 /*
  *  Division arithmetic operation implementation.
- *  According this book: Shura-Bura,Starkman pp. 77-82
+ *  According to this book: Shura-Bura, Starkman pp. 77-82
  *  (russian edition, 1962)
  */
 t_stat new_arithmetic_div_op (t_value *result, t_value x, t_value y, int op_code)
@@ -2119,7 +2125,7 @@ t_stat new_arithmetic_div_op (t_value *result, t_value x, t_value y, int op_code
    sign_x = get_number_sign(x);
    sign_y = get_number_sign(y);
 
-   if (arithmetic_op_debug) fprintf( stderr, "round=%d sign_x=%d sign_y=%d\n", beta_round, sign_x, sign_y );
+   if (arithmetic_op_debug) fprintf( stderr, "div01: no_round=%d sign_x=%d sign_y=%d\n", beta_round, sign_x, sign_y );
 
    p = (x & (EXPONENT|EXPONENT_SIGN)) >> BITS_36;
    q = (y & (EXPONENT|EXPONENT_SIGN)) >> BITS_36;
@@ -2127,7 +2133,7 @@ t_stat new_arithmetic_div_op (t_value *result, t_value x, t_value y, int op_code
    x1 = (x & MANTISSA);
    y1 = (y & MANTISSA);
 
-   if (arithmetic_op_debug) fprintf( stderr, "p=%d, q=%d, x1=%015llo, y1=%015llo\n", p, q, x1, y1 );
+   if (arithmetic_op_debug) fprintf( stderr, "div02: p=%d, q=%d, x1=%015llo, y1=%015llo\n", p, q, x1, y1 );
 
    if (x1 >= 2*y1) {
        /* mantissa overflow on division */
@@ -2140,9 +2146,26 @@ t_stat new_arithmetic_div_op (t_value *result, t_value x, t_value y, int op_code
    }
 
 
-   /* Step 1. Preliminary production */
+   /* Step 1. Preliminary quotient */
    zz = 0;
    zz1 = 0;
+   
+   /* We need 38 digits of quotient. From LSB they are:
+   - one auxilary digit for rounding
+   - 36 usual mantissa digits
+   - one extra digit for leading "1" if x>y.
+   During the loop: if (ak_prev>0) zz += (rr_shift << 1),
+   i.e. current digit position  corresponds to rr_shift in previous pass.
+   We're getting digits from MSB, from 38th-bit digit. 
+   So we need to set rr_shift before loop to 37th-bit (shift it by 36 bits). 
+   When digit will be writed, rr_shift will be 
+   shifted one more time to 38th bit.
+   
+   But this approach doesn't take into account that
+   on the last pass of loop we transform rr_shift to 0,
+   and there's no way to get "previous position" from 0.
+   So right way is to put "1" in rr_shift to 38-th bit,
+   get 38 digits and then shift the result to the right.*/
    rr_shift = (t_value)1<<(BITS_36+1);
 
    sign_zz = sign_x * sign_y;
@@ -2151,74 +2174,79 @@ t_stat new_arithmetic_div_op (t_value *result, t_value x, t_value y, int op_code
    qk = x1 - y1;
    ak_prev=1;
    if (qk & SIGN) ak_prev=-1;
-
+   
    if (arithmetic_op_debug) {
-     fprintf( stderr, "rr=%d sign_zz=%d ak_prev=%d qk=%015llo, zz1=%015llo rr_shift=%015llo\n", 
+     fprintf( stderr, "div03: rr=%d sign_zz=%d ak_prev=%d qk=%015llo, zz1=%015llo rr_shift=%015llo\n", 
                        rr, sign_zz, ak_prev, qk, zz1, rr_shift );
    }
-
-   for( i=1; i<39; i++ ) {
+   
+      for( i=1; i<39; i++ ) {
 #if 0
       if (qk >= 0) ak=1;
       if (qk < 0)  ak=-1;
       qk1 = (2*qk) - ak*y1;
 #endif
       qk1 = (qk << 1);
-      if (arithmetic_op_debug) fprintf( stderr, "i=%d: ak_prev=%d qk=%015llo, qk1=%015llo rr_shift=%015llo\n", 
+      if (arithmetic_op_debug) fprintf( stderr, "div04: i=%d: ak_prev=%d qk=%015llo, qk1=%015llo rr_shift=%015llo\n", 
                                                  i, ak_prev, qk, qk1, rr_shift );
       if (qk & SIGN) {
         /* qk < 0, ak=-1 */
          qk1 += y1;
-         ak = -1;
-         if (arithmetic_op_debug) fprintf( stderr, "i=%d: qk<0: qk1=%015llo, zz1=%015llo\n", i, qk1, zz1 );
+         //ak = -1;		 //rc such a way leds to ak_prev will show sign of qk in (n-2) pass! But we need (n-1)  
+         if (arithmetic_op_debug) fprintf( stderr, "div05: i=%d: qk<0: qk1=%015llo, zz1=%015llo\n", i, qk1, zz1 );
       }
       else {
         /* qk >= 0), ak=+1 */
          qk1 += (0-y1);
-         ak = 1;
-         if (arithmetic_op_debug) fprintf( stderr, "i=%d: qk>=0: qk1=%015llo, zz1=%015llo\n", i, qk1, zz1 );
+         //ak = 1;
+         if (arithmetic_op_debug) fprintf( stderr, "div05: i=%d: qk>=0: qk1=%015llo, zz1=%015llo\n", i, qk1, zz1 );
       }
+	  ak = (qk1 & SIGN ? -1 : 1 );  //rc true ak setting
       if (ak_prev > 0) {
          zz1 += (rr_shift<<1);
-         if (arithmetic_op_debug) fprintf( stderr, "i=%d: ak_prev=%d qk1=%015llo, zz1=%015llo\n", 
+         if (arithmetic_op_debug) fprintf( stderr, "div06: i=%d: ak_prev=%d qk1=%015llo, zz1=%015llo\n", 
                                                     i, ak_prev, qk1, zz1 );
       }
       rr_shift >>= 1;
       qk = qk1;
       ak_prev = ak;
-      if (arithmetic_op_debug) fprintf( stderr, "i=%d: qk1=%015llo, zz1=%015llo rr_shift=%015llo\n", i, qk1, zz1, rr_shift );
+	  if (arithmetic_op_debug) fprintf( stderr, "div07: i=%d: qk1=%015llo, zz1=%015llo rr_shift=%015llo\n", i, qk1, zz1, rr_shift );
    }
 
-   if (arithmetic_op_debug) fprintf( stderr, "qk1=%015llo, zz1=%015llo\n", qk1, zz1 );
+   if (arithmetic_op_debug) fprintf( stderr, "div08: qk1=%015llo, zz1=%015llo\n", qk1, zz1 );
 
    zz1 >>= 1;
-   if (arithmetic_op_debug) fprintf( stderr, "qk1=%015llo, zz1=%015llo\n", qk1, zz1 );
+   if (arithmetic_op_debug) fprintf( stderr, "div09: qk1=%015llo, zz1=%015llo\n", qk1, zz1 );
 
    /* Step 2. Produce final result */
 
    if (arithmetic_op_debug) fprintf( stderr, "FINAL 0: rr=%d zz1=%015llo\n", rr, zz1 );
 
    /* Normalize and round */
-   if (zz1 & BIT37) {
+   /*Should be aware that work is accomplished with 38-bit digits (
+   with auxilary LSB for rounding). Right-hand normalisation criterion
+   in this case is "1" in MSB (BIT38).
+   */
+   if (zz1 & BIT38) {
       //zz1 = (zz1 >> 1) + !(beta_round)*1;
-      zz1 += !(beta_round)*1;
-      if (arithmetic_op_debug) fprintf( stderr, "FINAL 09: rr=%d zz1=%015llo\n", rr, zz1 );
+	  //rc: norm first, round later
       zz1 >>= 1;
       rr = rr + 1;
+	  if (arithmetic_op_debug) fprintf( stderr, "FINAL 09: rr=%d zz1=%015llo\n", rr, zz1 );
+	  zz1 += !(beta_round)*1;
      if (arithmetic_op_debug) fprintf( stderr, "FINAL 10: rr=%d zz1=%015llo\n", rr, zz1 );
    }
    else {
      zz1 += !(beta_round)*1;
      if (arithmetic_op_debug) fprintf( stderr, "FINAL 11: rr=%d zz1=%015llo\n", rr, zz1 );
    }
-
-   zz = zz1;
+/*Auxilary LSB truncate*/
+   zz = (zz1>>1);
 
    if ((zz == 0) || (rr < 0)) {
 	/* Computer's zero. */
-        t = norm_zero(); 
-        *result = t;
-        //*result = t | ((x | y) & TAG);
+        t = norm_zero();        
+        *result = t | ((x | y) & TAG);
         if (arithmetic_op_debug) fprintf( stderr, "FINAL 15 ZERO: t=%015llo\n\n", t );
 	return SCPE_OK;
    }

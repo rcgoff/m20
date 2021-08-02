@@ -57,7 +57,6 @@ att mt1 test_02.mt1
 att mt2 test_02.mt2
 att mt3 test_02.mt3
 ;
-att -r cdr test_02.cdr
 ;
 ;de RPU1 0100000100010377
 ;de RPU4  0016000000000000

@@ -56,7 +56,7 @@ att mt1 kt_1963_test_16.mt1
 att mt2 kt_1963_test_16.mt2
 att mt3 kt_1963_test_16.mt3
 ;
-att -r cdr kt_1963_test_16.cdr
+att -r cdr kt_1963.cdr
 ;
 ;de RPU1 0100000100010377
 de RPU4  0016000000000000

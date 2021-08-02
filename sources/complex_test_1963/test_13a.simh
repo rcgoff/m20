@@ -55,7 +55,6 @@ att mt1 test_13a.mt1
 att mt2 test_13a.mt2
 att mt3 test_13a.mt3
 ;
-att -r cdr test_13a.cdr
 ;
 ;de RPU1 0100000100010377
 ; Печать

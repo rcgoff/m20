@@ -1819,7 +1819,7 @@ t_stat  new_arithmetic_op( t_value * result, t_value x, t_value y, int op_code )
 
 /*
  *  Square root arithmetic operation implementation.
- *  According this book: Shura-Bura,Starkman pp. 86-89
+ *  According to this book: Shura-Bura,Starkman pp. 86-89
  *  (russian edition, 1962)
  */
 t_stat new_arithmetic_square_root (t_value *result, t_value x, int op_code)
@@ -2091,10 +2091,7 @@ t_stat new_arithmetic_mult_op (t_value *result, t_value x, t_value y, int op_cod
        regRMR |= (t_value) rr << BITS_36;
        regRMR |= ((x ^ y) & SIGN);
    }
-   regRMR |= ((x | y) & TAG);
-   
-   
-   
+   regRMR |= ((x | y) & TAG);   
 
    if (arithmetic_op_debug) 
      fprintf( stderr, "FINAL 8: rr=%d rr_hi=%015llo, t==%015llo, regRMR=%015llo\n\n", rr, rr_hi, t, regRMR );
@@ -2113,7 +2110,7 @@ t_stat new_arithmetic_mult_op (t_value *result, t_value x, t_value y, int op_cod
  *  This is non-restoring division.
  *  According to this books: 
  *  1) Shura-Bura, Starkman (russian edition, 1962), pp. 82-86.
- *  2) Kartsev, Arifmetika cifrovykn masin (rus. 1969), p.499, 504-505.
+ *  2) Kartsev, Arifmetika cifrovykn mashin (rus. 1969), p.499, 504-505.
  *  3) Lebedev, Melnikov, General descript. of BESM, vol.1 (rus. 1959),
  *     p.150-151.
  *  4) https://en.wikipedia.org/wiki/Division_algorithm#Non-restoring_division

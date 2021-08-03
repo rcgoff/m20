@@ -77,6 +77,7 @@
  *                    3)Final right-shift to remove auxilary bit.
  *  01-Aug-2021  LOY  Shura-Bura division simplified.
  *  01-Aug-2021  LOY  Shura-Bura sqrt bugfix (TAG forgotten if machine zero).
+ *  03-Aug-2021  LOY  Shura-Bura division simplified (no ak_prev, all in current loop pass).
  */
 
 #include "m20_defs.h"
@@ -2120,7 +2121,7 @@ t_stat new_arithmetic_mult_op (t_value *result, t_value x, t_value y, int op_cod
  */
 t_stat new_arithmetic_div_op (t_value *result, t_value x, t_value y, int op_code)
 {
-    int beta_round, rr, sign_zz, p, q, sign_x, sign_y, i, ak_prev, ak;
+    int beta_round, rr, sign_zz, p, q, sign_x, sign_y, i, ak;
     t_value t, x1, y1, zz, qk;
 
    if (result == NULL) return STOP_INVARG;
@@ -2152,17 +2153,16 @@ t_stat new_arithmetic_div_op (t_value *result, t_value x, t_value y, int op_code
 	   
 
    /* Step 1. Preliminary quotient */
-   zz = 0;
+   zz = 1;
    
    sign_zz = sign_x * sign_y;
    rr = p - q + M20_MANTISSA_SHIFT;
 
-   qk = x1 - y1;
-   ak_prev = (qk & SIGN ? -1 : 1 ); 
+   qk = x1 - y1; 
    
    if (arithmetic_op_debug) 
-     fprintf( stderr, "div03: rr=%d sign_zz=%d ak_prev=%d qk=%015llo, zz=%015llo\n", 
-                       rr, sign_zz, ak_prev, qk, zz );
+     fprintf( stderr, "div03: rr=%d sign_zz=%d  qk=%015llo, zz=%015llo\n", 
+                       rr, sign_zz, qk, zz );
    
    /* We need 38 digits of quotient. From LSB they are:
    - one auxilary digit for rounding
@@ -2171,25 +2171,24 @@ t_stat new_arithmetic_div_op (t_value *result, t_value x, t_value y, int op_code
    Every pass - one quotient digit. */   
    for( i=1; i<39; i++ ) {
       qk <<= 1;
-      if (arithmetic_op_debug) fprintf( stderr, "div04: i=%d: ak_prev=%d qk=%015llo \n", 
-                                                 i, ak_prev, qk );
+      if (arithmetic_op_debug) fprintf( stderr, "div04: i=%d: qk=%015llo \n", 
+                                                 i, qk );
 												 
-	  /* add/subtract divisor, depending of sign of previous remainder */											 
-      qk -= ak_prev*y1;          
-      if (arithmetic_op_debug) fprintf( stderr, "div05: i=%d: qk=%015llo\n", i, qk );
-	  
-	  /* look at the sign of new remainder and store it for next pass */
+	  /* look at the sign of new remainder */
       ak = (qk & SIGN ? -1 : 1 );
 	  
-	  /* generate quoitient digit */
-	  zz <<= 1;
-	  if (ak_prev > 0) zz |=1;	  
-	  if (arithmetic_op_debug) fprintf( stderr, "div06: i=%d: ak_prev=%d qk=%015llo, zz=%015llo\n", 
-                                                    i, ak_prev, qk, zz );
-      ak_prev = ak;	 
+	  /* add/subtract divisor, depending of sign of the remainder */											 
+      qk -= ak*y1;
+      if (arithmetic_op_debug) fprintf( stderr, "div05: i=%d: qk=%015llo\n", i, qk );
+	  
+	  /* generate quotient digit */
+	  zz <<= 1;	  
+      zz += ak;	  
+	  if (arithmetic_op_debug) fprintf( stderr, "div06: i=%d: ak=%d qk=%015llo zz=%015llo\n", 
+                                                    i, ak, qk, zz );
    }
-   if (arithmetic_op_debug) fprintf( stderr, "div07: rr=%d zz=%015llo, \n", rr, zz );  
-   
+zz >>=1;
+   if (arithmetic_op_debug) fprintf( stderr, "div07: rr=%d zz=%015llo \n", rr, zz );  
 
    /* Step 2. Produce final result */   
 

@@ -77,7 +77,7 @@
  *                    3)Final right-shift to remove auxilary bit.
  *  01-Aug-2021  LOY  Shura-Bura division simplified.
  *  01-Aug-2021  LOY  Shura-Bura sqrt bugfix (TAG forgotten if machine zero).
- *  03-Aug-2021  LOY  Shura-Bura division simplified (no ak_prev, all in current loop pass).
+ *  03-Aug-2021  LOY  Shura-Bura division simplified (no ak_prev, all in current loop pass, no x1-y1).
  */
 
 #include "m20_defs.h"
@@ -2152,45 +2152,43 @@ t_stat new_arithmetic_div_op (t_value *result, t_value x, t_value y, int op_code
        return STOP_DIVZERO;
 
    /* Step 1. Preliminary quotient */
-   zz = 1;
+   zz = 0;
+   qk = x1;
    
    sign_zz = sign_x * sign_y;
    rr = p - q + M20_MANTISSA_SHIFT;
-
-   qk = x1 - y1; 
    
    if (arithmetic_op_debug) 
-     fprintf( stderr, "div03: rr=%d sign_zz=%d  qk=%015llo, zz=%015llo\n", 
-                       rr, sign_zz, qk, zz );
+     fprintf( stderr, "div03: rr=%d sign_zz=%d \n", 
+                       rr, sign_zz );
    
    /* We need 38 digits of quotient. From LSB they are:
    - one auxilary digit for rounding
    - 36 usual mantissa digits
    - one extra digit for leading "1" if x1 > y1.
    Every pass - one quotient digit. 
-   But the 1st posible extra digit already set outside the loop.
-   (it may be cancelled in the 1st loop pass: 10-1=01 if qk<0, x1<y1).
-   So, only 37 digits remain to calculate and the last digit in our
-   loop will be wrong, but during 38th pass the last useful digit may be
-   corrected in the same manner as the 1st. We can't get rid of 
-   38th pass, but must get rid of last digit.*/   
-   for( i=1; i<39; i++ ) {
-      qk <<= 1;
-      if (arithmetic_op_debug) fprintf( stderr, "div04: i=%d: qk=%015llo \n", 
-                                                 i, qk );
+
+   But during 39th pass the last useful 38th digit may be
+   corrected (10-1=01). We can't get rid of 
+   39th pass, but must get rid of last digit.*/   
+   for( i=1; i<40; i++ ) {       
 												 
 	  /* look at the sign of new remainder */
       ak = (qk & SIGN ? -1 : 1 );
 	  
 	  /* add/subtract divisor, depending of sign of the remainder */											 
       qk -= ak*y1;
-      if (arithmetic_op_debug) fprintf( stderr, "div05: i=%d: qk=%015llo\n", i, qk );
+      if (arithmetic_op_debug) fprintf( stderr, "div04: i=%d: qk=%015llo\n", i, qk );
 	  
 	  /* generate quotient digit */
 	  zz <<= 1;	  
       zz += ak;	  
-	  if (arithmetic_op_debug) fprintf( stderr, "div06: i=%d: ak=%d qk=%015llo zz=%015llo\n", 
+	  if (arithmetic_op_debug) fprintf( stderr, "div05: i=%d: ak=%d qk=%015llo zz=%015llo\n", 
                                                     i, ak, qk, zz );
+	  /*double the remainder */											
+	  qk<<=1;	
+	  if (arithmetic_op_debug) fprintf( stderr, "div06: i=%d: qk=%015llo \n", 
+                                                 i, qk );												
    }
    /*get rid of last wrong digit*/
    zz>>= 1;

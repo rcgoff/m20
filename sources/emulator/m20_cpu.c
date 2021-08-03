@@ -2147,10 +2147,18 @@ t_stat new_arithmetic_div_op (t_value *result, t_value x, t_value y, int op_code
        /* mantissa overflow on division */
        return STOP_DIVMOVF;
 
-   if (is_zero(y))
+   if (is_zero(y1))
        /* division by zero */
        return STOP_DIVZERO;
 	   
+   if (is_zero(x1)) {
+       /* zero result */
+	    t = norm_zero();  
+        t |= ((x | y) & TAG);		
+        *result = t;
+        if (arithmetic_op_debug) fprintf( stderr, "FINAL 15 ZERO: t=%015llo\n\n", t );
+	return SCPE_OK;
+   }   
 
    /* Step 1. Preliminary quotient */
    zz = 1;
@@ -2168,7 +2176,13 @@ t_stat new_arithmetic_div_op (t_value *result, t_value x, t_value y, int op_code
    - one auxilary digit for rounding
    - 36 usual mantissa digits
    - one extra digit for leading "1" if x1 > y1.
-   Every pass - one quotient digit. */   
+   Every pass - one quotient digit. 
+   But the 1st posible extra digit already set outside the loop.
+   (it may be cancelled in the 1st loop pass: 10-1=01 if qk<0, x1<y1).
+   So, only 37 digits remain to calculate and the last digit in our
+   loop will be wrong, but during 38th pass the last useful digit may be
+   corrected in the same manner as the 1st. We can't get rid of 
+   38th pass, but must get rid of last digit.*/   
    for( i=1; i<39; i++ ) {
       qk <<= 1;
       if (arithmetic_op_debug) fprintf( stderr, "div04: i=%d: qk=%015llo \n", 
@@ -2187,7 +2201,8 @@ t_stat new_arithmetic_div_op (t_value *result, t_value x, t_value y, int op_code
 	  if (arithmetic_op_debug) fprintf( stderr, "div06: i=%d: ak=%d qk=%015llo zz=%015llo\n", 
                                                     i, ak, qk, zz );
    }
-zz >>=1;
+   /*get rid of last wrong digit*/
+   zz>>= 1;
    if (arithmetic_op_debug) fprintf( stderr, "div07: rr=%d zz=%015llo \n", rr, zz );  
 
    /* Step 2. Produce final result */   
@@ -2210,8 +2225,9 @@ zz >>=1;
 
    if ((zz == 0) || (rr < 0)) {
 	/* Machine zero */
-        t = norm_zero();        
-        *result = t | ((x | y) & TAG);
+        t = norm_zero();
+        t |= ((x | y) & TAG);   
+        *result = t;
         if (arithmetic_op_debug) fprintf( stderr, "FINAL 15 ZERO: t=%015llo\n\n", t );
 	return SCPE_OK;
    }

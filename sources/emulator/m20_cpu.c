@@ -2150,15 +2150,6 @@ t_stat new_arithmetic_div_op (t_value *result, t_value x, t_value y, int op_code
    if (is_zero(y1))
        /* division by zero */
        return STOP_DIVZERO;
-	   
-   if (is_zero(x1)) {
-       /* zero result */
-	    t = norm_zero();  
-        t |= ((x | y) & TAG);		
-        *result = t;
-        if (arithmetic_op_debug) fprintf( stderr, "FINAL 15 ZERO: t=%015llo\n\n", t );
-	return SCPE_OK;
-   }   
 
    /* Step 1. Preliminary quotient */
    zz = 1;

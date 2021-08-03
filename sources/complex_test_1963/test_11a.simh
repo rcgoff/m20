@@ -7,10 +7,6 @@
 ! del test_11a.cdp
 ! del test_11a.drum1
 ! del test_11a.drum2
-! del test_11a.mt0
-! del test_11a.mt1
-! del test_11a.mt2
-! del test_11a.mt3
 ;
 set console debug=test_11a_debug.txt
 ;set console debug=console
@@ -51,11 +47,6 @@ att drum2 test_11a.drum2
 ;
 ;
 de TAPE_3_ACCESS_MODE 1
-;
-att mt0 test_11a.mt0
-att mt1 test_11a.mt1
-att mt2 test_11a.mt2
-att mt3 test_11a.mt3
 ;
 ;
 ;de RPU1 0100000100010377

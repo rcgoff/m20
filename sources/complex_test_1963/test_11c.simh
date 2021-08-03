@@ -1,6 +1,7 @@
 ; Комплексный тест (тест МЗУ-1 №11,магнитная лента)
 ; [1963, ЛВИКА]
 ; (2015 Стефанков)
+; (2021 Ядренников - проверка всех 4 лент)
 ;
 ! del test_11c_debug.txt
 ! del test_11c.lst
@@ -51,7 +52,6 @@ att drum1 test_11c.drum1
 att drum2 test_11c.drum2
 ;
 ;
-de TAPE_3_ACCESS_MODE 1
 ;
 att mt0 test_11c.mt0
 att mt1 test_11c.mt1
@@ -90,9 +90,30 @@ break -e 5[2]
 show break all
 ;
 ;
-echo Run
+echo Run tape 1
 run
 ;
+; магнитная лента 0
+de RPU4  0211004000127777
+load kt_1963_load_from_drum.m20
+break -e 5[2]
+echo Run tape 0
+run
+
+; магнитная лента 2
+de RPU4  0211004200127777
+load kt_1963_load_from_drum.m20
+break -e 5[2]
+echo Run tape 2
+run
+
+; магнитная лента 3
+de RPU4  0211004300127777
+load kt_1963_load_from_drum.m20
+break -e 5[2]
+echo Run tape 3
+run
+
 show queue
 show time
 ;show throttle

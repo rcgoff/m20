@@ -8,10 +8,6 @@
 ! del test_15.cdp
 ! del test_15.drum1
 ! del test_15.drum2
-! del test_15.mt0
-! del test_15.mt1
-! del test_15.mt2
-! del test_15.mt3
 ;
 set console debug=test_15_debug.txt
 ;set console debug=console

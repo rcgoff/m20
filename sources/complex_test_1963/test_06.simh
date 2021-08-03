@@ -7,10 +7,6 @@
 ! del test_06.cdp
 ! del test_06.drum1
 ! del test_06.drum2
-! del test_06.mt0
-! del test_06.mt1
-! del test_06.mt2
-! del test_06.mt3
 ;
 set console debug=test_06_debug.txt
 ;set console debug=console
@@ -50,11 +46,6 @@ att drum2 test_06.drum2
 ;
 ;
 ;de TAPE_3_ACCESS_MODE 1
-;
-att mt0 test_06.mt0
-att mt1 test_06.mt1
-att mt2 test_06.mt2
-att mt3 test_06.mt3
 ;
 ;
 ;de RPU1 0100000100010377

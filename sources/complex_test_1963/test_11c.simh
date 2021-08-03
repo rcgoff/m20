@@ -6,8 +6,6 @@
 ! del test_11c_debug.txt
 ! del test_11c.lst
 ! del test_11c.cdp
-! del test_11c.drum1
-! del test_11c.drum2
 ! del test_11c.mt0
 ! del test_11c.mt1
 ! del test_11c.mt2
@@ -48,10 +46,6 @@ attach cdp test_11c.cdp
 de DRUM_0_ACCESS_MODE 1
 ;
 att drum0 kt_1963.drum0
-att drum1 test_11c.drum1
-att drum2 test_11c.drum2
-;
-;
 ;
 att mt0 test_11c.mt0
 att mt1 test_11c.mt1

@@ -6,8 +6,6 @@
 ! del test_02_rc_ADD_OLD_debug.txt
 ! del test_02.lst
 ! del test_02.cdp
-! del test_02.drum1
-! del test_02.drum2
 ;
 set console debug=test_02_rc_ADD_OLD_debug.txt
 ;set console debug=console
@@ -42,9 +40,6 @@ attach cdp test_02.cdp
 de DRUM_0_ACCESS_MODE 1
 ;
 att drum0 kt_1963.drum0
-att drum1 test_02.drum1
-att drum2 test_02.drum2
-;
 ;
 ;de TAPE_3_ACCESS_MODE 1
 ;

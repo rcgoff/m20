@@ -1,6 +1,7 @@
 ; Комплексный тест (тест МЗУ-2 №12)
 ; [1963, ЛВИКА]
 ; (2015 Стефанков)
+; (2021 Ядренников - тест барабанов 2 и 3)
 ;
 ! del test_12_debug.txt
 ! del test_12.lst
@@ -57,6 +58,7 @@ de TAPE_3_ACCESS_MODE 1
 de RPU1  0101010101010101
 de RPU2  0000000000000000
 de RPU3  0010101010101010
+;барабан 2
 de RPU4  0012000200000000
 ex RPU1
 ex RPU2
@@ -72,15 +74,23 @@ ex RPU4
 ;
 load kt_1963_load_from_drum.m20
 ;
-break -e 1[10]
-break -e 2[10]
+;break -e 1[10]
+;break -e 2[10]
 break -e 21[10]
 ;break -e 35
 show break all
 ;
 ;
-echo Run
+echo Run .drum1
 run
+
+;барабан 3
+de RPU4  0012000300000000
+load kt_1963_load_from_drum.m20
+break -e 21[10]
+echo Run .drum2
+run
+
 ;
 show queue
 show time

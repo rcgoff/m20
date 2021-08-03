@@ -1,6 +1,7 @@
 ; Комплексный тест (тест МЗУ-1 №11,магнитный барабан)
 ; [1963, ЛВИКА]
 ; (2015 Стефанков)
+; (2021 Ядренников - проверка барабанов 2 и 3)
 ;
 ! del test_11d_debug.txt
 ! del test_11d.lst
@@ -80,8 +81,16 @@ break -e 5[2]
 show break all
 ;
 ;
-echo Run
+echo Run .drum1
 run
+;
+; магнитный барабан 3
+de RPU4  0211001700737777
+break -e 5[2]
+load kt_1963_load_from_drum.m20
+echo Run .drum2
+run
+
 ;
 show queue
 show time

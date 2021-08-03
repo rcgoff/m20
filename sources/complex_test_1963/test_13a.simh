@@ -5,8 +5,6 @@
 ! del test_13a_debug.txt
 ! del test_13a.lst
 ! del test_13a.cdp
-! del test_13a.drum1
-! del test_13a.drum2
 ;
 set console debug=test_13a_debug.txt
 ;set console debug=console
@@ -40,9 +38,6 @@ attach cdp test_13a.cdp
 de DRUM_0_ACCESS_MODE 1
 ;
 att drum0 kt_1963.drum0
-att drum1 test_13a.drum1
-att drum2 test_13a.drum2
-;
 ;
 de TAPE_3_ACCESS_MODE 1
 ;

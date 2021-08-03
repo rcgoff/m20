@@ -6,8 +6,6 @@
 ! del test_15_debug.txt
 ! del test_15.lst
 ! del test_15.cdp
-! del test_15.drum1
-! del test_15.drum2
 ;
 set console debug=test_15_debug.txt
 ;set console debug=console

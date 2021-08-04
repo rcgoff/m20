@@ -3,8 +3,6 @@
 ; (2015 Стефанков)
 ;
 ! del test_08_debug.txt
-! del test_08.lst
-! del test_08.cdp
 ;
 set console debug=test_08_debug.txt
 ;set console debug=console
@@ -30,10 +28,8 @@ de DPTYPE 4
 ;de BCDPRINT 1
 ;set lpt NEWEXTFMT
 set lpt OCTHELPFMT
-att lpt test_08.lst
 ;
 set cdr extfmt
-attach cdp test_08.cdp
 ;
 de DRUM_0_ACCESS_MODE 1
 ;

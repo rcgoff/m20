@@ -4,7 +4,6 @@
 ;
 ! del test_13_debug.txt
 ! del test_13.lst
-! del test_13.cdp
 ! del test_13.drum2
 ! del test_13.mt1
 ;
@@ -35,7 +34,6 @@ set lpt OCTHELPFMT
 att lpt test_13.lst
 ;
 set cdr extfmt
-attach cdp test_13.cdp
 ;
 de DRUM_0_ACCESS_MODE 1
 ;

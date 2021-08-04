@@ -4,7 +4,6 @@
 ;
 ! del kt_1963_test_16_debug.txt
 ! del kt_1963_test_16.lst
-! del kt_1963_test_16.cdp
 ! del kt_1963_test_16.drum0
 ;
 set console debug=kt_1963_test_16_debug.txt
@@ -34,7 +33,6 @@ set lpt OCTHELPFMT
 att lpt kt_1963_test_16.lst
 ;
 set cdr extfmt
-attach cdp kt_1963_test_16.cdp
 ;
 de DRUM_0_ACCESS_MODE 3
 ;

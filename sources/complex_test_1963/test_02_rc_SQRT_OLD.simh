@@ -4,8 +4,6 @@
 ; 2021 - Л.Ядренников: другая точка останова
 ;
 ! del test_02_rc_SQRT_OLD_debug.txt
-! del test_02.lst
-! del test_02.cdp
 ;
 set console debug=test_02_rc_SQRT_OLD_debug.txt
 ;set console debug=console
@@ -32,10 +30,8 @@ de DPTYPE 4
 ;de BCDPRINT 1
 ;set lpt NEWEXTFMT
 set lpt OCTHELPFMT
-att lpt test_02.lst
 ;
 set cdr extfmt
-attach cdp test_02.cdp
 ;
 de DRUM_0_ACCESS_MODE 1
 ;

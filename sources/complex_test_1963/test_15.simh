@@ -4,7 +4,6 @@
 ; (2021 Ядренников)
 ;
 ! del test_15_debug.txt
-! del test_15.lst
 ! del test_15.cdp
 ;
 set console debug=test_15_debug.txt
@@ -31,7 +30,6 @@ de DPTYPE 4
 ;de BCDPRINT 1
 ;set lpt NEWEXTFMT
 set lpt OCTHELPFMT
-att lpt test_15.lst
 ;
 set cdr extfmt
 attach cdp test_15.cdp
@@ -62,8 +60,7 @@ load kt_1963_load_from_drum.m20
 ;
 ;break -e 1[10]
 
-;0006 is a interim stop before card reading.
-;first stop (before proofreading) is processed (g 7 below), second - isn't necessary
+;0004 is a call to punching. First time is necessary, second (2nd test pass) - no.
 break -e 0004[2]
 ;show break all
 ;

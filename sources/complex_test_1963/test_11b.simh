@@ -3,7 +3,6 @@
 ; (2015 Стефанков)
 ;
 ! del test_11b_debug.txt
-! del test_11b.lst
 ! del test_11b.cdp
 ;
 set console debug=test_11b_debug.txt
@@ -32,7 +31,6 @@ de DPTYPE 4
 ;de BCDPRINT 1
 ;set lpt NEWEXTFMT
 set lpt OCTHELPFMT
-att lpt test_11b.lst
 ;
 set cdr extfmt
 attach cdp test_11b.cdp

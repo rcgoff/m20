@@ -4,8 +4,6 @@
 ; (2021 Ядренников - тест барабанов 2 и 3)
 ;
 ! del test_12_debug.txt
-! del test_12.lst
-! del test_12.cdp
 ! del test_12.drum1
 ! del test_12.drum2
 ;
@@ -33,10 +31,8 @@ de DPTYPE 4
 ;de BCDPRINT 1
 ;set lpt NEWEXTFMT
 set lpt OCTHELPFMT
-att lpt test_12.lst
 ;
 set cdr extfmt
-attach cdp test_12.cdp
 ;
 de DRUM_0_ACCESS_MODE 1
 ;

@@ -4,7 +4,6 @@
 ;
 ! del test_13a_debug.txt
 ! del test_13a.lst
-! del test_13a.cdp
 ;
 set console debug=test_13a_debug.txt
 ;set console debug=console
@@ -33,7 +32,6 @@ set lpt OCTHELPFMT
 att lpt test_13a.lst
 ;
 set cdr extfmt
-attach cdp test_13a.cdp
 ;
 de DRUM_0_ACCESS_MODE 1
 ;

@@ -3,7 +3,6 @@
 ; (2015 Стефанков)
 ;
 ! del kt_1963_test_15_debug.txt
-! del kt_1963_test_15.lst
 ! del kt_1963_test_15.cdp
 ! del kt_1963_test_15.drum0
 ;
@@ -80,5 +79,6 @@ ex -m 1-471
 ;
 ex 1000-1147
 ex -m 1000-1147
+att -r cdr kt_1963_test_15.cdp 
 g 7
 quit

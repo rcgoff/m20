@@ -3,8 +3,6 @@
 ; (2015 Стефанков)
 ;
 ! del test_13c_debug.txt
-! del test_13c.lst
-! del test_13c.cdp
 ! del test_13c.drum2
 ;
 set console debug=test_13c_debug.txt
@@ -31,10 +29,8 @@ de DPTYPE 4
 ;de BCDPRINT 1
 ;set lpt NEWEXTFMT
 set lpt OCTHELPFMT
-att lpt test_13c.lst
 ;
 set cdr extfmt
-attach cdp test_13c.cdp
 ;
 de DRUM_0_ACCESS_MODE 1
 ;

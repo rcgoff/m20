@@ -1,13 +1,11 @@
-; Комплексный тест (тест МЗУ-3 №13)
+; Комплексный тест (тест МЗУ-3 №13,МЛ)
 ; [1963, ЛВИКА]
 ; (2015 Стефанков)
 ;
-! del test_13_debug.txt
-! del test_13.lst
-! del test_13.drum2
-! del test_13.mt1
+! del test_13b_mt_debug.txt
+! del test_13b.mt1
 ;
-set console debug=test_13_debug.txt
+set console debug=test_13b_mt_debug.txt
 ;set console debug=console
 set cpu debug
 set drum debug
@@ -31,24 +29,22 @@ de DPTYPE 4
 ;de BCDPRINT 1
 ;set lpt NEWEXTFMT
 set lpt OCTHELPFMT
-att lpt test_13.lst
 ;
 set cdr extfmt
 ;
 de DRUM_0_ACCESS_MODE 1
 ;
 att drum0 kt_1963.drum0
-att drum2 test_13.drum2
-;
 ;
 de TAPE_3_ACCESS_MODE 1
 ;
-att mt1 test_13.mt1
+att mt1 test_13b.mt1
 ;
 ;
 ;de RPU1 0100000100010377
 ;de RPU4  0413000000000000
-de RPU4  0713000000000000
+; МЛ
+de RPU4  0213000000000000
 ;de RPU4  0113000000000000
 ;de RPU1  0105340571203177
 ;de RPU2  0123456776543210

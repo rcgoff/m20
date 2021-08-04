@@ -2,9 +2,9 @@
 ; [1963, ЛВИКА]
 ; (2015 Стефанков)
 ;
-! del test_05_debug.txt
+! del test_02_w_debug.txt
 ;
-set console debug=test_05_debug.txt
+set console debug=test_02_w_debug.txt
 ;set console debug=console
 set cpu debug
 set drum debug

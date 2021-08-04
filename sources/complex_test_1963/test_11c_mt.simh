@@ -3,13 +3,13 @@
 ; (2015 Стефанков)
 ; (2021 Ядренников - проверка всех 4 лент)
 ;
-! del test_11c_debug.txt
+! del test_11c_mt_debug.txt
 ! del test_11c.mt0
 ! del test_11c.mt1
 ! del test_11c.mt2
 ! del test_11c.mt3
 ;
-set console debug=test_11c_debug.txt
+set console debug=test_11c_mt_debug.txt
 ;set console debug=console
 set cpu debug
 set drum debug

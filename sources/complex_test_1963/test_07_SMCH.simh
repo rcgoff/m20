@@ -1,11 +1,10 @@
-; Комплексный тест (все тесты 1-10)
+; Комплексный тест (тест СМЧ на переменном коде №7)
 ; [1963, ЛВИКА]
 ; (2015 Стефанков)
-; 2021 - Л.Ядренников: другая точка останова
 ;
-! del test_02_rc_ADD_OLD_debug.txt
+! del test_07_SMCH_debug.txt
 ;
-set console debug=test_02_rc_ADD_OLD_debug.txt
+set console debug=test_07_SMCH_debug.txt
 ;set console debug=console
 set cpu debug
 set drum debug
@@ -22,7 +21,6 @@ de ARITHMETIC_OP_DEBUG 1
 ;de ENABLE_OPCODE_040_HACK 1
 ;de DRUM_READ_DATA_DUMP 1
 ;de DRUM_WRITE_DATA_DUMP 1
-;de PRINT_STAT_ON_BREAK 0
 ;
 de LPTWIDTH 1
 de DPTYPE 4
@@ -47,18 +45,15 @@ att drum0 kt_1963.drum0
 ; 10**-18 
 ;de RPU1  005447113564352        
 ; 10**-19
-de RPU2  001730171123733        
+;de RPU2  001730171123733        
 ; 0,009
 de RPU2  072446722743250        
 ; 0,05
-;de RPU1  074631463146315        
+de RPU1  074631463146315        
 ; 10**12
 ;de RPU2  150721522450400        
-; 10**-18 
-de RPU3  005447113564352        
-;de RPU3  0000000000000000
-;de RPU4  0020000000010000 ;тест W зациклен (№02)
-de RPU4  760000000010000
+de RPU3  0000000000000000
+de RPU4  0007000000010000
 ex RPU1
 ex RPU2
 ex RPU3
@@ -66,18 +61,16 @@ ex RPU4
 ;
 ;
 ;de USE_NEW_ADD 1
-;de USE_ADD_SBST 1
 ;de ROUND_ERROR_BITS_OFF 1
 ;de USE_NEW_MULT 1
 ;de USE_NEW_DIV 1
 ;de USE_NEW_SQRT 1
-;de USE_ADD_SBST 1
 ;
 load kt_1963_load_from_drum.m20
 ;
 ;break -e 1[10]
 ;break -e 1[2]
-break -e 7752[10]	;8 тестов + снова считывание 1го теста, на 10-й раз остановится
+break -e 4[3]
 show break all
 ;
 ;

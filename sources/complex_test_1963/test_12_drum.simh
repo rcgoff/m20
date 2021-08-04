@@ -1,11 +1,13 @@
-; Комплексный тест (тест МЗУ-3 №13,МЛ)
+; Комплексный тест (тест МЗУ-2 №12)
 ; [1963, ЛВИКА]
 ; (2015 Стефанков)
+; (2021 Ядренников - тест барабанов 2 и 3)
 ;
-! del test_13b_debug.txt
-! del test_13b.mt1
+! del test_12_drum_debug.txt
+! del test_12.drum1
+! del test_12.drum2
 ;
-set console debug=test_13b_debug.txt
+set console debug=test_12_drum_debug.txt
 ;set console debug=console
 set cpu debug
 set drum debug
@@ -20,8 +22,8 @@ set mt   debug
 ;de ARITHMETIC_OP_DEBUG 1
 ;de MEMORY_45_CHECKING 1
 ;de ENABLE_OPCODE_040_HACK 1
-;de DRUM_READ_DATA_DUMP 1
-;de DRUM_WRITE_DATA_DUMP 1
+de DRUM_READ_DATA_DUMP 1
+de DRUM_WRITE_DATA_DUMP 1
 ;
 de LPTWIDTH 1
 de DPTYPE 4
@@ -35,20 +37,25 @@ set cdr extfmt
 de DRUM_0_ACCESS_MODE 1
 ;
 att drum0 kt_1963.drum0
+att drum1 test_12.drum1
+att drum2 test_12.drum2
+;
 ;
 de TAPE_3_ACCESS_MODE 1
-;
-att mt1 test_13b.mt1
 ;
 ;
 ;de RPU1 0100000100010377
 ;de RPU4  0413000000000000
-; МЛ
-de RPU4  0213000000000000
+;de RPU4  0713000000000000
 ;de RPU4  0113000000000000
 ;de RPU1  0105340571203177
 ;de RPU2  0123456776543210
 ;de RPU2  0765432101234567
+de RPU1  0101010101010101
+de RPU2  0000000000000000
+de RPU3  0010101010101010
+;барабан 2
+de RPU4  0012000200000000
 ex RPU1
 ex RPU2
 ex RPU3
@@ -63,14 +70,23 @@ ex RPU4
 ;
 load kt_1963_load_from_drum.m20
 ;
-break -e 1[2]
-break -e 2[2]
+;break -e 1[10]
+;break -e 2[10]
+break -e 21[10]
 ;break -e 35
 show break all
 ;
 ;
-echo Run
+echo Run .drum1
 run
+
+;барабан 3
+de RPU4  0012000300000000
+load kt_1963_load_from_drum.m20
+break -e 21[10]
+echo Run .drum2
+run
+
 ;
 show queue
 show time

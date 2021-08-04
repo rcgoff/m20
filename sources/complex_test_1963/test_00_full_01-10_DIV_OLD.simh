@@ -3,9 +3,9 @@
 ; (2015 Стефанков)
 ; 2021 - Л.Ядренников: другая точка останова
 ;
-! del test_02_debug.txt
+! del test_00_full_01-10_DIV_OLD_debug.txt
 ;
-set console debug=test_02_debug.txt
+set console debug=test_00_full_01-10_DIV_OLD_debug.txt
 ;set console debug=console
 set cpu debug
 set drum debug

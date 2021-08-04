@@ -3,9 +3,9 @@
 ; (2015 Стефанков)
 ; 2021 - Л.Ядренников: другая точка останова
 ;
-! del test_02_rc_MULT_OLD_debug.txt
+! del test_00_full_01-10_MULT_NEW_debug.txt
 ;
-set console debug=test_02_rc_MULT_OLD_debug.txt
+set console debug=test_00_full_01-10_MULT_NEW_debug.txt
 ;set console debug=console
 set cpu debug
 set drum debug
@@ -68,7 +68,7 @@ ex RPU4
 de USE_NEW_ADD 1
 de USE_ADD_SBST 1
 ;de ROUND_ERROR_BITS_OFF 1
-;de USE_NEW_MULT 1
+de USE_NEW_MULT 1
 ;de USE_NEW_DIV 1
 ;de USE_NEW_SQRT 1
 ;de USE_ADD_SBST 1

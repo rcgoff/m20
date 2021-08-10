@@ -92,6 +92,7 @@ SIM_FLAGS=$(linux_flags)
 ###-DSIM_NEED_GIT_COMMIT_ID
 ###NO_INLINE;_CRT_NONSTDC_NO_WARNINGS;_CRT_SECURE_NO_WARNINGS;_WINSOCK_DEPRECATED_NO_WARNINGS;USE_DISPLAY;SIM_NEED_GIT_COMMIT_ID
 
+util_flags=-DUSE_SYSTEM_FPRINTF
 user_flags=$(SIM_FLAGS)
 #rus_encoding=-DRUS_UNIX_KOI8R
 #rus_encoding=-DRUS_WIN_CP1251
@@ -206,25 +207,25 @@ $(M20): $(M20_OBJS) $(SIMH_OBJS)
 
 # Supplemental
 $(CODE2PCARD).o: $(CODE2PCARD).c 
-	$(CC) -c $(cc_flags) -o $(CODE2PCARD).o $(CODE2PCARD).c
+	$(CC) -c $(cc_flags) $(util_flags) -o $(CODE2PCARD).o $(CODE2PCARD).c
 
 $(CODE2PCARD): $(CODE2PCARD).o
 	$(LINK) $(link_flags) $(console_flags) -o $(CODE2PCARD) $(CODE2PCARD).o $(std_libs)
 
 $(DUMP_DRM).o: $(DUMP_DRM).c 
-	$(CC) -c $(cc_flags) -o $(DUMP_DRM).o $(DUMP_DRM).c
+	$(CC) -c $(cc_flags) $(util_flags) -o $(DUMP_DRM).o $(DUMP_DRM).c
 
 $(DUMP_DRM): $(DUMP_DRM).o
 	$(LINK) $(link_flags) $(console_flags) -o $(DUMP_DRM) $(DUMP_DRM).o $(std_libs)
 
 $(DUMP_MT).o: $(DUMP_MT).c 
-	$(CC) -c $(cc_flags) -o $(DUMP_MT).o $(DUMP_MT).c
+	$(CC) -c $(cc_flags) $(util_flags) -o $(DUMP_MT).o $(DUMP_MT).c
 
 $(DUMP_MT): $(DUMP_MT).o
 	$(LINK) $(link_flags) $(console_flags) -o $(DUMP_MT) $(DUMP_MT).o $(std_libs)
 
 $(AUTOCODE_M20).o: $(AUTOCODE_M20).c 
-	$(CC) -c $(cc_flags) -Fo$(AUTOCODE_M20).obj $(AUTOCODE_M20).c
+	$(CC) -c $(cc_flags) $(util_flags) -Fo$(AUTOCODE_M20).obj $(AUTOCODE_M20).c
 
 $(AUTOCODE_M20): $(AUTOCODE_M20).o
 	$(LINK) $(link_flags) $(console_flags) -o $(AUTOCODE_M20) $(AUTOCODE_M20).o $(std_libs)

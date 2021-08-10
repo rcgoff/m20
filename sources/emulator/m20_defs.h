@@ -32,7 +32,15 @@
 #error "M-20 wanted 64b values because M-20 have 45b values!"
 #endif
 
-
+#if defined(USE_SYSTEM_FPRINTF)
+#define Fprintf fprintf
+#define sim_isdigit(chr) isdigit(chr)
+#undef strcasecmp
+#undef strncasecmp
+#define sim_tolower(chr) tolower(chr)
+//#define sim_strcasecmp(str1, str2) strcasecmp(str1, str2)
+//#define sim_strncasecmp(str1, str2, len) strncasecmp(str1, str2, len) 
+#endif
 
 /* Memory and devices */
 

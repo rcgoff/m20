@@ -97,6 +97,8 @@ opt_flags=-Ox
 cc_flags=$(opt_flags) -W3  -MT -DUSE_INT64 \
        -D_CRT_SECURE_NO_DEPRECATE=1 -D_CRT_NON_CONFORMING_SWPRINTFS=1 \
        -D_CRT_NONSTDC_NO_DEPRECATE=1 -D_WIN32_WINNT=0x0501 $(user_flags)
+
+util_flags=-DUSE_SYSTEM_FPRINTF
 #cflags_2=-D_WINSOCK2_
 #link_flags=/RELEASE /NODEFAULTLIB /INCREMENTAL:NO /PDB:NONE /MACHINE:x86
 link_flags=/RELEASE /INCREMENTAL:NO /PDB:NONE
@@ -201,25 +203,25 @@ $(GETOPT).obj: $(GETOPT).c $(GETOPT).h
     $(CC) -c $(cc_flags) -Fo$(GETOPT).obj $(GETOPT).c
 
 $(CODE2PCARD).obj: $(CODE2PCARD).c $(GETOPT).obj
-    $(CC) -c $(cc_flags) -Fo$(CODE2PCARD).obj $(CODE2PCARD).c
+    $(CC) -c $(cc_flags) $(util_flags) -Fo$(CODE2PCARD).obj $(CODE2PCARD).c
 
 $(CODE2PCARD).exe: $(CODE2PCARD).obj $(GETOPT).obj
     $(LINK) $(link_flags) $(console_flags) -out:$(CODE2PCARD).exe $(CODE2PCARD).obj $(GETOPT).obj $(std_libs)
 
 $(DUMP_DRM).obj: $(DUMP_DRM).c $(GETOPT).obj
-    $(CC) -c $(cc_flags) -Fo$(DUMP_DRM).obj $(DUMP_DRM).c
+    $(CC) -c $(cc_flags) $(util_flags) -Fo$(DUMP_DRM).obj $(DUMP_DRM).c
 
 $(DUMP_DRM).exe: $(DUMP_DRM).obj $(GETOPT).obj
     $(LINK) $(link_flags) $(console_flags) -out:$(DUMP_DRM).exe $(DUMP_DRM).obj $(GETOPT).obj $(std_libs)
 
 $(DUMP_MT).obj: $(DUMP_MT).c $(GETOPT).obj
-    $(CC) -c $(cc_flags) -Fo$(DUMP_MT).obj $(DUMP_MT).c
+    $(CC) -c $(cc_flags) $(util_flags) -Fo$(DUMP_MT).obj $(DUMP_MT).c
 
 $(DUMP_MT).exe: $(DUMP_MT).obj $(GETOPT).obj
     $(LINK) $(link_flags) $(console_flags) -out:$(DUMP_MT).exe $(DUMP_MT).obj $(GETOPT).obj $(std_libs)
 
 $(AUTOCODE_M20).obj: $(AUTOCODE_M20).c $(GETOPT).obj
-    $(CC) -c $(cc_flags) -Fo$(AUTOCODE_M20).obj $(AUTOCODE_M20).c
+    $(CC) -c $(cc_flags) $(util_flags) -Fo$(AUTOCODE_M20).obj $(AUTOCODE_M20).c
 
 $(AUTOCODE_M20).exe: $(AUTOCODE_M20).obj $(GETOPT).obj
     $(LINK) $(link_flags) $(console_flags) -out:$(AUTOCODE_M20).exe $(AUTOCODE_M20).obj $(GETOPT).obj $(std_libs)

@@ -15,7 +15,7 @@
  */
 
 
-#include "m20_defs_old.h"
+#include "m20_defs.h"
 
 #if 0
 #if _WIN32

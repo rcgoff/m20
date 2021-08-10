@@ -78,6 +78,8 @@
  *  01-Aug-2021  LOY  Shura-Bura division simplified.
  *  01-Aug-2021  LOY  Shura-Bura sqrt bugfix (TAG forgotten if machine zero).
  *  03-Aug-2021  LOY  Shura-Bura division simplified (no ak_prev, all in current loop pass, no x1-y1).
+ *  10-Aug-2021  LOY  Removed wrong functions: addition, new_addition, new_addition_v20. 
+ *                    USE_NEW_ADD - Shurabura addition, else - new_addition_v44. USE_ADD_SBST = USE_NEW_ADD.
  */
 
 #include "m20_defs.h"
@@ -179,10 +181,8 @@ int      arithmetic_op_debug = 0;
 int      print_sys_stat = 1;
 int      memory_45_checking = 1;
 
-int      use_add_sbst = 0;
+
 int      new_add = 0;
-int      rounding_error_bits_off = 1;
-int      rounding_up_on = 0;
 int      new_mult = 0;
 int      new_div = 0;
 int      new_sqrt = 0;
@@ -270,14 +270,12 @@ REG cpu_reg[] = {
         { DRDATA (DISABLE_IS2_TRACE, disable_is2_trace, 8), PV_LEFT },
         { DRDATA (MEMORY_45_CHECKING, memory_45_checking, 8), PV_LEFT },
         { DRDATA (ENABLE_OPCODE_040_HACK, enable_opcode_040_hack, 8), PV_LEFT },
-        { DRDATA (ARITHMETIC_OP_DEBUG, arithmetic_op_debug, 8), PV_LEFT },
-        { DRDATA (ROUND_ERROR_BITS_OFF, rounding_error_bits_off, 8), PV_LEFT },
-        { DRDATA (ROUNDING_UP_ON, rounding_up_on, 8), PV_LEFT },
+        { DRDATA (ARITHMETIC_OP_DEBUG, arithmetic_op_debug, 8), PV_LEFT },   
         { DRDATA (USE_NEW_ADD, new_add, 8), PV_LEFT },
         { DRDATA (USE_NEW_MULT, new_mult, 8), PV_LEFT },
         { DRDATA (USE_NEW_DIV, new_div, 8), PV_LEFT },
         { DRDATA (USE_NEW_SQRT, new_sqrt, 8), PV_LEFT },
-        { DRDATA (USE_ADD_SBST, use_add_sbst, 8), PV_LEFT },
+        { DRDATA (USE_ADD_SBST, new_add, 8), PV_LEFT },
 	{ 0 }
 };
 
@@ -585,151 +583,6 @@ t_value normalize (t_value x)
 
     return x;
 }
-
-
-
-
-
-/*
- * Сложение двух чисел, с блокировкой округления и нормализации,
- * если требуется.
- */
-t_stat addition (t_value *result, t_value x, t_value y, int no_round, int no_norm)
-{
-    int xexp, yexp, rexp;
-    t_value xm, ym, r;
-
-    if (arithmetic_op_debug) 
-      fprintf( stderr, "ADD: ENTER: no_round=%d no_norm=%d x=%015llo y=%015llo\n", no_round, no_norm, x, y );
-
-    if (is_zero (x)) {
-	if (! no_norm) y = normalize (y);
-	*result = y | (x & TAG);
-	return 0;
-    }
-
-    if (is_zero (y)) {
-        if (! no_norm) x = normalize (x);
-	*result = x | (y & TAG);
-	return 0;
-    }
-
-    /* Извлечем порядок чисел. */
-    xexp = x >> BITS_36 & 0177;
-    yexp = y >> BITS_36 & 0177;
-
-    if (arithmetic_op_debug) fprintf( stderr, "add: xexp=%d y_exp=%d\n", xexp, yexp );
-
-    if (yexp > xexp) {
-	/* Пусть x - большее, а y - меньшее число (по модулю). */
-	t_value t = x;
-	int texp = xexp;
-	x = y;
-	xexp = yexp;
-	y = t;
-	yexp = texp;
-    }
-
-    if (arithmetic_op_debug) fprintf( stderr, "add: xexp=%d y_exp=%d x=%015llo y=%015llo\n", xexp, yexp, x, y );
-
-    if (xexp - yexp >= BITS_36) {      // ??? strange
- 	/* Пренебрежимо малое слагаемое. */
-        if (! no_norm) x = normalize (x);
-	*result = x | (y & TAG);
-        if (arithmetic_op_debug) fprintf( stderr, "add: LEAVE: FINAL 0: r=%015llo\n\n", *result );
-	return 0;
-    }
-
-    /* Извлечем мантиссу чисел. */
-    xm = x & MANTISSA;
-    ym = (y & MANTISSA) >> (xexp - yexp);
-
-
-    /* Сложим. */
-    rexp = xexp;
-    if (arithmetic_op_debug) fprintf( stderr, "add: rexp=%d xm=%015llo ym=%015llo\n", rexp, xm, ym );
-
-    if ((x ^ y) & SIGN) {
-	/* Противоположные знаки. */
-	r = xm - ym;
-        if (arithmetic_op_debug) fprintf( stderr, "add: A1: r=%015llo\n", r );
-	if (r & SIGN) {
-	    t_int64 r1;
-	    r1 = r; r = -r1;
-	    r |= SIGN;
-            if (arithmetic_op_debug) fprintf( stderr, "add: A2: r=%015llo\n", r );
-	}
-    } else {
-	/* Числа одного знака. */
-	r = xm + ym;
-        if (arithmetic_op_debug) fprintf( stderr, "add: B1: r=%015llo\n", r );
-	if (! no_round) {
-	   if ((xexp != yexp) && ((x & MANTISSA) && (y&MANTISSA))) {
-	     /* Округление. */
-	     r += 1;
-             if (arithmetic_op_debug) fprintf( stderr, "add: B2: r=%015llo\n", r );
-	   }	
-	}
-	if (r >> BITS_36) {
-	    /* Выход за 36 разрядов, нормализация вправо. */
-	    if (! no_round) {
-		/* Округление. */
-		r += 1;  /* ??? */
-	    }
-	    r >>= 1;
-	    ++rexp;
-            if (arithmetic_op_debug) fprintf( stderr, "add: C1: rexp=%d r=%015llo\n", rexp, r );
-	    if (rexp > 127) {
-		/* переполнение при сложении */
-		return STOP_ADDOVF;
-            }
-	}
-    }
-
-    /* Check for special cases */
-    if (arithmetic_op_debug) fprintf( stderr, "add: CHECK 1: rexp=%d r=%015llo\n", rexp, r );
-
-    /* check for machine zero */
-    //if ((r == 0) || (rexp < 0)) {
-    if (r == 0) {
-      r = 0; rexp = 0;
-      //goto make_result;
-      goto done;
-    }
-
-    goto make_result;
-
-    /* Конструируем результат. */
-make_result:
-    if (arithmetic_op_debug) fprintf( stderr, "add: FINAL 1: r=%015llo rexp=%d\n", r, rexp );
-
-    r |= (t_value) rexp << BITS_36;
-    if (arithmetic_op_debug) fprintf( stderr, "add: FINAL 2: r=%015llo\n", r );
-
-    r ^= (x & SIGN);
-    if (arithmetic_op_debug) fprintf( stderr, "add: FINAL 3: r=%015llo\n", r );
-
-    if (! no_norm) r = normalize (r);
-    if (arithmetic_op_debug) fprintf( stderr, "add: LEAVE: FINAL 10: r=%015llo\n\n", r );
-
-    if (rounding_error_bits_off && !no_round) {
-      t_value t;
-      t = r & MANTISSA;
-      //fprintf( stderr, "add: FINAL TEMP: t1=%015llo, t2=%015llo\n", (BIT36|BIT01), ~(BIT36|BIT01) );
-      if ((t & BIT36) && (t & BIT01) && (((t & ~(BIT36|BIT01)) & MANTISSA) == 0)) { 
-        if (arithmetic_op_debug) fprintf( stderr, "add: FINAL 13: r=%018llo\n", r );
-        r &= ~1; r &= WORD45; 
-        if (arithmetic_op_debug) fprintf( stderr, "add: FINAL 14: r=%018llo\n", r );
-      }
-    }
-
-done:
-    *result = r | ((x | y) & TAG);
-    if (arithmetic_op_debug) fprintf( stderr, "add: LEAVE: FINAL 20: r=%015llo\n\n", r );
-
-    return 0;
-}
-
 
 
 /*
@@ -1042,322 +895,6 @@ t_stat square_root (t_value *result, t_value x, int no_round)
  *  (used shura-bura and other sources)
  */
 
-
-
-
-/*
- * Two numbers addition. If required then blocking of rounding and normalization.
- */
-t_stat new_addition (t_value *result, t_value x, t_value y, int no_round, int no_norm)
-{
-    int xexp, yexp, rexp, texp, fix_sign;
-    t_value xm, ym, r, xm1, ym1, t;
-
-    r = 0;
-    if (arithmetic_op_debug) 
-      fprintf( stderr, "NEW ADD: no_round=%d no_norm=%d x=%015llo y=%015llo\n", no_round, no_norm, x, y );
-
-    /* Get exponent */
-    xexp = x >> BITS_36 & 0177;
-    yexp = y >> BITS_36 & 0177;
-
-    if (arithmetic_op_debug) fprintf( stderr, "add: xexp=%d y_exp=%d\n", xexp, yexp );
-
-    if (yexp > xexp) {
-	/* Assume always that x > y */
-	t = x; texp = xexp;
-	x = y; xexp = yexp;
-	y = t; yexp = texp;
-    }
-
-    /* Get mantissa */
-    xm = x & MANTISSA;
-    ym = y & MANTISSA;
-
-    xm1 = xm << 1;
-    ym1 = ym << 1;
-
-    if (arithmetic_op_debug) fprintf( stderr, "add: xm=%015llo ym=%015llo xm1=%018llo ym1=%018llo\n", xm, ym, xm1, ym1 );
-
-    /* Mantissa alignment */
-    ym1 >>= (xexp - yexp);
-
-    /* Addition */
-    rexp = xexp;
-    if (arithmetic_op_debug) fprintf( stderr, "add: rexp=%d xm1=%018llo ym1=%018llo\n", rexp, xm1, ym1 );
-
-    /* Opposite signs? */
-    if ((x ^ y) & SIGN) {
-	r = xm1 - ym1;
-        if (arithmetic_op_debug) fprintf( stderr, "add: A1: r=%018llo\n", r );
-	if (r & (SIGN<<1)) {
-	    t_int64 r1;
-	    r1 = r; r = -r1;
-	    r |= (SIGN<<1);
-            if (arithmetic_op_debug) fprintf( stderr, "add: A2: r=%015llo\n", r );
-	}
-    }
-
-
-    /* Same signs? */
-    if (((x ^ y) & SIGN) == 0) {
-	r = xm1 + ym1;
-        if (arithmetic_op_debug) fprintf( stderr, "add: B1: r=%018llo\n", r );
-	if (!no_round) {
-           if (arithmetic_op_debug) fprintf( stderr, "add: B2: r=%018llo\n", r );
-           if ((xexp != yexp) && ((xm1 & MANTISSA<<1) && (ym1 & MANTISSA<<1))) {
-	     /* Rounding */
-	     r += 1;
-             if (arithmetic_op_debug) fprintf( stderr, "add: B3: r=%018llo\n", r );
-             if (rounding_up_on) {
-               if (r & 3) {
-                 if (arithmetic_op_debug) fprintf( stderr, "add: B4: r=%018llo\n", r );
-                 r += 1;
-               }
-             }
-	   }	
-	}
-    }
-
-    /* normalization to right */
-    if (r & (BIT37<<1)) {
-        if (arithmetic_op_debug) fprintf( stderr, "add: C1: rexp=%d r=%018llo\n", rexp, r );
-        r >>= 1;
-	++rexp;
-        if (arithmetic_op_debug) fprintf( stderr, "add: C2: rexp=%d r=%018llo\n", rexp, r );
-	if (rexp > 127) {
-	    /* addition overflow  */
-	    return STOP_ADDOVF;
-        }
-        if (arithmetic_op_debug) fprintf( stderr, "add: C3: rexp=%d r=%018llo\n", rexp, r );
-    }
-
-    /* normalization to left */
-    if (!no_norm) {
-        if (arithmetic_op_debug) fprintf( stderr, "add: D1: rexp=%d r=%018llo\n", rexp, r );
-        for (;;) {
-           if (r == 0) {
-             /* Zero mantissa - make a null */
-	     break;
-           }
- 	   if (r & BIT37)  break;
- 	   fix_sign = 0;
- 	   if (r & (SIGN<<1)) fix_sign =1 ;
-	   r <<= 1;
-	   r &= WORD45;
-	   if (fix_sign) r |= SIGN<<1;
-	   --rexp;
-           if (arithmetic_op_debug) fprintf( stderr, "add: D5: rexp=%d r=%018llo\n", rexp, r );
-	   if (rexp < 0) break;
-        }
-        if (arithmetic_op_debug) fprintf( stderr, "add: D9: rexp=%d r=%018llo\n", rexp, r );
-    }
-
-    if (arithmetic_op_debug) fprintf( stderr, "add: E1: rexp=%d r=%018llo\n", rexp, r );
-
-    r >>= 1;
-    if (arithmetic_op_debug) fprintf( stderr, "add: E3: rexp=%d r=%018llo\n", rexp, r );
-
-    /* check for machine zero */
-    if ((r == 0) || (rexp < 0)) {
-      r = 0; rexp = 0;
-      goto make_result;
-    }
-
-    /* Make final result. */
-  make_result:
-    if (arithmetic_op_debug) fprintf( stderr, "add: FINAL 10: r=%018llo\n", r );
-
-    r |= (t_value) rexp << BITS_36;
-    if (arithmetic_op_debug) fprintf( stderr, "add: FINAL 11: r=%018llo\n", r );
-
-    r ^= (x & SIGN);   /* sign of bigger number */
-    if (arithmetic_op_debug) fprintf( stderr, "add: FINAL 12: r=%018llo\n", r );
-
-    if (rounding_error_bits_off && !no_round) {
-      t = r & MANTISSA;
-      //fprintf( stderr, "add: FINAL TEMP: t1=%015llo, t2=%015llo\n", (BIT36|BIT01), ~(BIT36|BIT01) );
-      if ((t & BIT36) && (t & BIT01) && (((t & ~(BIT36|BIT01)) & MANTISSA) == 0)) { 
-        if (arithmetic_op_debug) fprintf( stderr, "add: FINAL 13: r=%018llo\n", r );
-        r &= ~1; r &= WORD45; 
-        if (arithmetic_op_debug) fprintf( stderr, "add: FINAL 14: r=%018llo\n", r );
-      }
-    }
-
-    *result = r | ((x | y) & TAG);
-    if (arithmetic_op_debug) fprintf( stderr, "add: FINAL 15: r=%018llo\n\n", r );
-
-    return SCPE_OK;
-}
-
-
-
-/*
- * Two numbers addition. If required then blocking of rounding and normalization.
- */
-t_stat new_addition_v20 (t_value *result, t_value x, t_value y, int no_round, int no_norm)
-{
-    int xexp, yexp, rexp, texp, fix_sign, r_bit;
-    t_value xm, ym, r, xm1, ym1, t;
-
-    r = 0;
-    if (arithmetic_op_debug) 
-      fprintf( stderr, "NEW ADD v20: no_round=%d no_norm=%d x=%015llo y=%015llo\n", no_round, no_norm, x, y );
-
-    /* Get exponent */
-    xexp = x >> BITS_36 & 0177;
-    yexp = y >> BITS_36 & 0177;
-
-    if (arithmetic_op_debug) fprintf( stderr, "add: xexp=%d y_exp=%d\n", xexp, yexp );
-
-    if (yexp > xexp) {
-	/* Assume always that x > y */
-	t = x; texp = xexp;
-	x = y; xexp = yexp;
-	y = t; yexp = texp;
-    }
-
-    /* Get mantissa */
-    xm = x & MANTISSA;
-    ym = y & MANTISSA;
-
-    xm1 = xm << 1;
-    ym1 = ym << 1;
-
-    if (arithmetic_op_debug) fprintf( stderr, "add: xm=%015llo ym=%015llo xm1=%018llo ym1=%018llo\n", xm, ym, xm1, ym1 );
-
-    if (!no_round && (((x ^ y) & SIGN) == 0)) {
-        if ((xexp != yexp) && ((xm1 & MANTISSA<<1) && (ym1 & MANTISSA<<1))) {
-          xm1 |= 1;
-          ym1 |= 1;
-          if (arithmetic_op_debug) fprintf( stderr, "add: ROUND: xm=%015llo ym=%015llo xm1=%018llo ym1=%018llo\n", xm, ym, xm1, ym1 );
-       }
-    }
-
-    //if (arithmetic_op_debug) fprintf( stderr, "add: xm=%015llo ym=%015llo xm1=%018llo ym1=%018llo\n", xm, ym, xm1, ym1 );
-
-    /* Mantissa alignment */
-    ym1 >>= (xexp - yexp);
-
-    /* Addition */
-    rexp = xexp;
-    if (arithmetic_op_debug) fprintf( stderr, "add: rexp=%d xm1=%018llo ym1=%018llo\n", rexp, xm1, ym1 );
-
-    /* Opposite signs? */
-    if ((x ^ y) & SIGN) {
-	r = xm1 - ym1;
-        if (arithmetic_op_debug) fprintf( stderr, "add: A1: SUM: r=%018llo\n", r );
-	if (r & (SIGN<<1)) {
-	    t_int64 r1;
-	    r1 = r; r = -r1;
-	    r |= (SIGN<<1);
-            if (arithmetic_op_debug) fprintf( stderr, "add: A2: SUM: r=%015llo\n", r );
-	}
-    }
-
-
-    /* Same signs? */
-    if (((x ^ y) & SIGN) == 0) {
-	r = xm1 + ym1;
-        if (arithmetic_op_debug) fprintf( stderr, "add: B1: SUM: r=%018llo\n", r );
-#if 0
-	if (!no_round) {
-           if (arithmetic_op_debug) fprintf( stderr, "add: B2: r=%018llo\n", r );
-           if ((xexp != yexp) && ((xm1 & MANTISSA<<1) && (ym1 & MANTISSA<<1))) {
-	     /* Rounding */
-	     r += 1;
-             if (arithmetic_op_debug) fprintf( stderr, "add: B3: r=%018llo\n", r );
-             if (rounding_up_on) {
-               if (r & 3) {
-                 if (arithmetic_op_debug) fprintf( stderr, "add: B4: r=%018llo\n", r );
-                 r += 1;
-               }
-             }
-	   }	
-	}
-#endif
-    }
-
-    /* normalization to right */
-    if (r & (BIT37<<1)) {
-        if (arithmetic_op_debug) fprintf( stderr, "add: C1: NORM_R: rexp=%d r=%018llo\n", rexp, r );
-        r_bit = r & 1;
-        r >>= 1;
-        if (!no_round && r_bit) { 
-           r += 1;
-           if (arithmetic_op_debug) fprintf( stderr, "add: C3: ROUND: rexp=%d r=%018llo\n", rexp, r );
-        }
-	++rexp;
-        if (arithmetic_op_debug) fprintf( stderr, "add: C5: rexp=%d r=%018llo\n", rexp, r );
-	if (rexp > 127) {
-	    /* addition overflow  */
-	    return STOP_ADDOVF;
-        }
-        if (arithmetic_op_debug) fprintf( stderr, "add: C8: rexp=%d r=%018llo\n", rexp, r );
-    }
-
-    /* normalization to left */
-    if (!no_norm) {
-        if (arithmetic_op_debug) fprintf( stderr, "add: D1: NORM_L: rexp=%d r=%018llo\n", rexp, r );
-        for (;;) {
-           if (r == 0) {
-             /* Zero mantissa - make a null */
-	     break;
-           }
- 	   if (r & BIT37)  break;
- 	   fix_sign = 0;
- 	   if (r & (SIGN<<1)) fix_sign =1 ;
-	   r <<= 1;
-	   r &= WORD45;
-	   if (fix_sign) r |= SIGN<<1;
-	   --rexp;
-           if (arithmetic_op_debug) fprintf( stderr, "add: D5: rexp=%d r=%018llo\n", rexp, r );
-	   if (rexp < 0) break;
-        }
-        if (arithmetic_op_debug) fprintf( stderr, "add: D9: rexp=%d r=%018llo\n", rexp, r );
-    }
-
-    if (arithmetic_op_debug) fprintf( stderr, "add: E1: rexp=%d r=%018llo\n", rexp, r );
-
-    r >>= 1;
-    if (arithmetic_op_debug) fprintf( stderr, "add: E3: rexp=%d r=%018llo\n", rexp, r );
-
-    /* check for machine zero */
-    if ((r == 0) || (rexp < 0)) {
-      r = 0; rexp = 0;
-      goto make_result;
-    }
-
-    /* Make final result. */
-  make_result:
-    if (arithmetic_op_debug) fprintf( stderr, "add: FINAL 10: r=%018llo\n", r );
-
-    r |= (t_value) rexp << BITS_36;
-    if (arithmetic_op_debug) fprintf( stderr, "add: FINAL 11: r=%018llo\n", r );
-
-    r ^= (x & SIGN);   /* sign of bigger number */
-    if (arithmetic_op_debug) fprintf( stderr, "add: FINAL 12: r=%018llo\n", r );
-
-#if 0
-    if (rounding_error_bits_off && !no_round) {
-      t = r & MANTISSA;
-      //fprintf( stderr, "add: FINAL TEMP: t1=%015llo, t2=%015llo\n", (BIT36|BIT01), ~(BIT36|BIT01) );
-      if ((t & BIT36) && (t & BIT01) && (((t & ~(BIT36|BIT01)) & MANTISSA) == 0)) { 
-        if (arithmetic_op_debug) fprintf( stderr, "add: FINAL 13: r=%018llo\n", r );
-        r &= ~1; r &= WORD45; 
-        if (arithmetic_op_debug) fprintf( stderr, "add: FINAL 14: r=%018llo\n", r );
-      }
-    }
-#endif
-
-    *result = r | ((x | y) & TAG);
-    if (arithmetic_op_debug) fprintf( stderr, "add: FINAL 15: r=%018llo\n\n", r );
-
-    return SCPE_OK;
-}
-
-
-
 static int  is_norm_zero( t_value num )
 {
     if ( ((num & SIGN) == 0) && ((num & MANTISSA) == 0) && ((num & EXPONENT) == 0))
@@ -1389,7 +926,7 @@ t_stat new_addition_v44 (t_value *result, t_value x, t_value y, int no_round, in
 
     r = 0;
     if (arithmetic_op_debug) 
-      fprintf( stderr, "NEW ADD 44: no_round=%d no_norm=%d x=%015llo y=%015llo\n", no_round, no_norm, x, y );
+      fprintf( stderr, "ADD v44: no_round=%d no_norm=%d x=%015llo y=%015llo\n", no_round, no_norm, x, y );
 
     /* Get exponent */
     xexp = x >> BITS_36 & 0177;
@@ -1515,23 +1052,13 @@ t_stat new_addition_v44 (t_value *result, t_value x, t_value y, int no_round, in
     r |= (t_value) rexp << BITS_36;
     if (arithmetic_op_debug) fprintf( stderr, "add: FINAL 11: r=%018llo\n", r );
 
-    //r ^= (x & SIGN);   /* sign of bigger number */
     if (rs < 0) r |= SIGN;
     if (arithmetic_op_debug) fprintf( stderr, "add: FINAL 12: r=%018llo\n", r );
 
-#if 0
-    if (rounding_error_bits_off) {
-      t = r & MANTISSA;
-      //fprintf( stderr, "add: FINAL TEMP: t1=%015llo, t2=%015llo\n", (BIT36|BIT01), ~(BIT36|BIT01) );
-      if ((t & BIT36) && (t & BIT01) && (((t & ~(BIT36|BIT01)) & MANTISSA) == 0)) { 
-        if (arithmetic_op_debug) fprintf( stderr, "add: FINAL 13: r=%018llo\n", r );
-        r &= ~1; r &= WORD45; 
-        if (arithmetic_op_debug) fprintf( stderr, "add: FINAL 14: r=%018llo\n", r );
-      }
-    }
-#endif
+
  final:
-    *result = r | ((x | y) & TAG);
+    r |= ((x | y) & TAG);
+	*result = r;
     if (arithmetic_op_debug) fprintf( stderr, "add: FINAL 15: r=%018llo\n\n", r );
 
     return SCPE_OK;
@@ -2475,17 +2002,16 @@ t_stat cpu_one_inst ()
 	case OPCODE_ADD_NORM:               /* 021 = сложение без округления с нормализацией */
 	case OPCODE_ADD_ROUND:              /* 041 = сложение с округлением без нормализации */
 	case OPCODE_ADD:                    /* 061 = сложение без округления и без нормализации */
-		x = mosu_load (a1);
+add:	x = mosu_load (a1);
 		y = mosu_load (a2);
-		if (use_add_sbst) {
-                  err = new_arithmetic_op( &regRR, x, y, op );
-		  goto add2;
+		if (new_add) {
+          err = new_arithmetic_op( &regRR, x, y, op );
+		  goto add_final;
 		}
-add:		
-                //if (new_add) err = new_addition_v20 (&regRR, x, y, op >> 4 & 1, op >> 5 & 1);
-                if (new_add) err = new_addition_v44 (&regRR, x, y, op >> 4 & 1, op >> 5 & 1, force_round);
-                else err = addition (&regRR, x, y, op >> 4 & 1, op >> 5 & 1);
-add2:
+add_v44: 
+        err = new_addition_v44 (&regRR, x, y, op >> 4 & 1, op >> 5 & 1, force_round);
+               
+add_final:
 		if (err) return err;
 		mosu_store (a3, regRR);
 		trgSW = (regRR & SIGN) != 0;
@@ -2497,13 +2023,11 @@ add2:
 	case OPCODE_SUB_NORM:               /* 022 = вычитание без округления с нормализацией */
 	case OPCODE_SUB_ROUND:              /* 042 = вычитание с округлением без нормализации */
 	case OPCODE_SUB:                    /* 062 = вычитание без округления и без нормализации */
-                if (use_add_sbst) {
-		    x = mosu_load (a1);
-		    y = mosu_load (a2);
-                    err = new_arithmetic_op( &regRR, x, y, op );
-		    goto add2;
-                }
-		x = mosu_load (a1);		
+        if (new_add) goto add;
+		
+		x = mosu_load (a1);
+        y = mosu_load (a2);
+		if (arithmetic_op_debug) fprintf(stderr,"sub01: y=%15llo \n",y);		
 				
 		/* When one of operands is machine zero, rounding should not be performed. 
 		But if we take machine zero as 2nd operand, invert the sign and call addition,
@@ -2524,10 +2048,9 @@ add2:
 		and set it as "1" on conditions listed above.
 		
 		This -0 subtraction didn't covered by General Arithmetic Test 6 of 1963,
-		but tested in test_02.simh and also seperetely by LOY.*/ 
+		but tested in test_02_w.simh and also seperetely by LOY.*/ 
 		
-		y = mosu_load (a2);
-		if (arithmetic_op_debug) fprintf(stderr,"sub01: y=%15llo \n",y);
+		
 		if (is_norm_zero(y)) {
 			//bit5 = 1 in opcode means round OFF
 			if (arithmetic_op_debug) fprintf(stderr,"sub02a: NORMZERO DETECTED, opcode=%o, ",op);
@@ -2542,31 +2065,25 @@ add2:
 
 		
 		y ^= SIGN;
-		if (arithmetic_op_debug) fprintf(stderr,"sub03: y_after_inversion=%15llo \n",y);
-				
+		if (arithmetic_op_debug) fprintf(stderr,"sub03: y_after_inversion=%15llo \n",y);				
 		
-		goto add;
+		goto add_v44;
 
 
 	case OPCODE_SUB_MOD_ROUND_NORM:     /* 003 = вычитание модулей с округлением и нормализацией */
 	case OPCODE_SUB_MOD_NORM:           /* 023 = вычитание модулей без округления с нормализацией */
 	case OPCODE_SUB_MOD_ROUND:          /* 043 = вычитание модулей с округлением без нормализации */
 	case OPCODE_SUB_MOD:                /* 063 = вычитание модулей без округления и без нормализации */
-	     {
-                int no_norm = 1;
-                if (use_add_sbst) {
-		    x = mosu_load (a1);
-		    y = mosu_load (a2);
-                    err = new_arithmetic_op( &regRR, x, y, op );
-		    goto add2;
-                }
+	    {        
+        if (new_add) goto add;
+        
+        int no_norm = 1;
+        if ((op==003) || (op==023)) no_norm=0; 
+		
 		x = mosu_load (a1) & ~SIGN;
-		y = mosu_load (a2) | SIGN;
-		if ((op==003) || (op==023)) no_norm=0; 
-                if (new_add) err = new_addition_v44 (&regRR, x, y, 1, no_norm, force_round);
-                //if (new_add) err = new_addition_v20 (&regRR, x, y, 1, no_norm);
-                else err = addition (&regRR, x, y, 1, no_norm);
-		goto add2;
+		y = mosu_load (a2) | SIGN;		
+        err = new_addition_v44 (&regRR, x, y, 1, no_norm, force_round);        
+		goto add_final;
 	     }
 
 	case OPCODE_MULT_ROUND_NORM:        /* 005 = умножение с округлением и нормализацией */

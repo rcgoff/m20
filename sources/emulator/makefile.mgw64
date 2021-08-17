@@ -1,5 +1,7 @@
 # Copyright (c) 2014 Dmitry Stefankov 
-# Copyright (c) 2021 Leonid Yadrennikov - changed sim_disk to general file (workable in new SIMH)
+# Copyright (c) 2021 Leonid Yadrennikov 
+#	20.07.21 - changed sim_disk to general file (workable in new SIMH)
+#	17.08.21 - util_flags to normal build with new simh and without old .h files 
 
 # $Id$
 
@@ -91,6 +93,7 @@ SIM_FLAGS=-DCRT_NONSTDC_NO_WARNINGS -D_CRT_SECURE_NO_WARNINGS \
 ###NO_INLINE;_CRT_NONSTDC_NO_WARNINGS;_CRT_SECURE_NO_WARNINGS;_WINSOCK_DEPRECATED_NO_WARNINGS;USE_DISPLAY;SIM_NEED_GIT_COMMIT_ID
 
 user_flags=$(SIM_FLAGS)
+util_flags=-DUSE_SYSTEM_FPRINTF
 rus_encoding=-DRUS_WIN_CP1251
 #rus_encoding=-DRUS_DOS_CP866
 #rus_encoding=-DRUS_UNIX_KOI8R
@@ -210,25 +213,25 @@ $(GETOPT).obj: $(GETOPT).c $(GETOPT).h
 	$(CC) -c $(cc_flags) -o $(GETOPT).obj $(GETOPT).c
 
 $(CODE2PCARD).obj: $(CODE2PCARD).c $(GETOPT).obj
-	$(CC) -c $(cc_flags) -o $(CODE2PCARD).obj $(CODE2PCARD).c
+	$(CC) -c $(cc_flags) $(util_flags) -o $(CODE2PCARD).obj $(CODE2PCARD).c
 
 $(CODE2PCARD).exe: $(CODE2PCARD).obj $(GETOPT).obj
 	$(LINK) $(link_flags) $(console_flags) -o $(CODE2PCARD).exe $(CODE2PCARD).obj $(GETOPT).obj $(std_libs)
 
 $(DUMP_DRM).obj: $(DUMP_DRM).c $(GETOPT).obj
-	$(CC) -c $(cc_flags) -o $(DUMP_DRM).obj $(DUMP_DRM).c
+	$(CC) -c $(cc_flags) $(util_flags) -o $(DUMP_DRM).obj $(DUMP_DRM).c
 
 $(DUMP_DRM).exe: $(DUMP_DRM).obj $(GETOPT).obj
 	$(LINK) $(link_flags) $(console_flags) -o $(DUMP_DRM).exe $(DUMP_DRM).obj $(GETOPT).obj $(std_libs)
 
 $(DUMP_MT).obj: $(DUMP_MT).c $(GETOPT).obj
-	$(CC) -c $(cc_flags) -o $(DUMP_MT).obj $(DUMP_MT).c
+	$(CC) -c $(cc_flags) $(util_flags) -o $(DUMP_MT).obj $(DUMP_MT).c
 
 $(DUMP_MT).exe: $(DUMP_MT).obj $(GETOPT).obj
 	$(LINK) $(link_flags) $(console_flags) -o $(DUMP_MT).exe $(DUMP_MT).obj $(GETOPT).obj $(std_libs)
 
 $(AUTOCODE_M20).obj: $(AUTOCODE_M20).c $(GETOPT).obj
-	$(CC) -c $(cc_flags) -o $(AUTOCODE_M20).obj $(AUTOCODE_M20).c
+	$(CC) -c $(cc_flags) $(util_flags) -o $(AUTOCODE_M20).obj $(AUTOCODE_M20).c
 
 $(AUTOCODE_M20).exe: $(AUTOCODE_M20).obj $(GETOPT).obj
 	$(LINK) $(link_flags) $(console_flags) -o $(AUTOCODE_M20).exe $(AUTOCODE_M20).obj $(GETOPT).obj $(std_libs)

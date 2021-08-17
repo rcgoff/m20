@@ -3,7 +3,6 @@
  * Purpose:  Symbolic assembly coding system for M-20
  *
  * Copyright (c) 2015, Dmitry Stefankov
- * Copyright (c) 2015, Leonid Yadrennikov
  *
  * $Id$
  *
@@ -15,7 +14,6 @@
  *  28-Feb-2015  DVS  Added sym_values into numeric values (data lines)
  *  26-Mar-2015  DVS  Minor changes
  *  01-May-2021  DVS  Fixed a bug with data line parsing (bug found by Leonid Yadrennikov).
- *  20-Jul-2021  LOY  m20_defs_old as temporary hack for build with new SIMH version
  *
  */
 

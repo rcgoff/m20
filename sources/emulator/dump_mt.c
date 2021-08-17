@@ -3,14 +3,12 @@
  * Purpose:  dump magnetic tape storage in text fromat
  *
  * Copyright (c) 2015, Dmitry Stefankov
- * Copyright (c) 2021, Leonid Yadrennikov
  *
  * $Id$
  *
  * Revision History.
  *
  *  04-Mar-2015  DVS  Initial Implemementation
- *  20-Jul-2021  LOY  m20_defs_old as temporary hack for build with new SIMH version
  *
  */
 

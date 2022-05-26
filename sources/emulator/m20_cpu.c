@@ -80,7 +80,8 @@
  *  03-Aug-2021  LOY  Shura-Bura division simplified (no ak_prev, all in current loop pass, no x1-y1).
  *  10-Aug-2021  LOY  Removed wrong functions: addition, new_addition, new_addition_v20.
  *                    USE_NEW_ADD - Shurabura addition, else - new_addition_v44. USE_ADD_SBST = USE_NEW_ADD.
- *  26-May-2022  LOY  ITEP mode: draft FA command. And also a little tab-space cleanup.
+ *  26-May-2022  LOY  ITEP mode: draft FA command, regRA to 7776 mapping. 
+ *                    And also a little tab-space cleanup.
  */
 
 #include "m20_defs.h"
@@ -513,9 +514,17 @@ t_value mosu_load (int addr)
       if (addr == 07773) { val = RPU3;  }
       if (addr == 07774) { val = RPU4;  }
       if (addr == 07775) { val = regRR; }
+            if (itep_mode) {
+	if (addr == 07776)
+		{val = regRA << BITS_12; }
+/*	if (addr == 07777) {
+		//РК */
+	}
+      else {
       if (addr == 07776) { val = 0;     }
       if (addr == 07777) { val = 0;     }
-    }
+	}
+      }
 
     return val;
 }
@@ -537,9 +546,17 @@ void mosu_store (int addr, t_value val)
       if (addr == 07773) { val = RPU3;  }
       if (addr == 07774) { val = RPU4;  }
       if (addr == 07775) { val = regRR; }
+      if (itep_mode) {
+	if (addr == 07776)
+		{ regRA = val >> BITS_12 & MAX_ADDR_VALUE; }
+/*	if (addr == 07777) {
+		//РК */
+	}
+      else {
       if (addr == 07776) { val = 0;     }
       if (addr == 07777) { val = 0;     }
-    }
+	}
+      }
 
     MOSU[addr] = val;
 }

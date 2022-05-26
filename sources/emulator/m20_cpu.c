@@ -2,9 +2,9 @@
  * File:     m20_cpu.c
  * Purpose:  M-20 CPU and memory simulator
  *
- * Copyright (c) 2009, Serge Vakulenko
- * Copyright (c) 2014, Dmitry Stefankov
- * Copyright (c) 2021, Leonid Yadrennikov
+ * Copyright (c) 2008-2009, Serge Vakulenko
+ * Copyright (c) 2014-2015, Dmitry Stefankov
+ * Copyright (c) 2021-2022, Leonid Yadrennikov
  *
  * $Id$
  *
@@ -80,6 +80,7 @@
  *  03-Aug-2021  LOY  Shura-Bura division simplified (no ak_prev, all in current loop pass, no x1-y1).
  *  10-Aug-2021  LOY  Removed wrong functions: addition, new_addition, new_addition_v20.
  *                    USE_NEW_ADD - Shurabura addition, else - new_addition_v44. USE_ADD_SBST = USE_NEW_ADD.
+ *  26-May-2022  LOY  ITEP mode: draft FA command. And also a little tab-space cleanup.
  */
 
 #include "m20_defs.h"
@@ -186,6 +187,7 @@ int      new_add = 0;
 int      new_mult = 0;
 int      new_div = 0;
 int      new_sqrt = 0;
+int      itep_mode = 0;
 
 static  int  enable_m20_print_ascii_text = 0;
 
@@ -276,6 +278,7 @@ REG cpu_reg[] = {
         { DRDATA (USE_NEW_DIV, new_div, 8), PV_LEFT },
         { DRDATA (USE_NEW_SQRT, new_sqrt, 8), PV_LEFT },
         { DRDATA (USE_ADD_SBST, new_add, 8), PV_LEFT },
+        { DRDATA (ITEP_MODE, itep_mode, 8), PV_LEFT },
 	{ 0 }
 };
 
@@ -2428,8 +2431,35 @@ shift:
          *   (операции управления)
          */
 
+        case OPCODE_STOP_037:    /* 037 = останов машины, в ИТЭФ-режиме: ФА - формирование адресов */
+	if (itep_mode) {
+		t_value newcmd;
+		x = mosu_load (a1) >> BITS_12 & MAX_ADDR_VALUE;
+		y = mosu_load (a2) >> BITS_12 & MAX_ADDR_VALUE;
+		t = mosu_load (a3) >> BITS_12 & MAX_ADDR_VALUE;
+		fprintf(stderr,"itep_FA1: (A)2=%04o, (B)2=%04o, C(2)=%04o\n",x,y,t);
+		newcmd=mosu_load (regKRA);
+		fprintf(stderr,"itep_FA2: updKRA=%04o, (updKRA)=%015llo\n",regKRA,newcmd);
+		x += newcmd >> BITS_24 & MAX_ADDR_VALUE;
+		x &= MAX_ADDR_VALUE;
+		y += newcmd >> BITS_12 & MAX_ADDR_VALUE;
+		y &= MAX_ADDR_VALUE;
+		t += newcmd & MAX_ADDR_VALUE;
+		t &= MAX_ADDR_VALUE;
+		fprintf(stderr,"itep_FA3: (A)2+K=%04o, (B)2+L=%04o, C(2)+M=%04o\n",x,y,t);
+		regRK = newcmd & EXPONENT;
+		regRK |= x << BITS_24;
+		regRK |= y << BITS_12;
+		regRK |=t;
+		fprintf(stderr,"itep_FA4: regRK=%015llo\n",regRK);
+		err = cpu_one_inst();
+		regKRA +=1;
+		regKRA &= MAX_ADDR_VALUE;
+		fprintf(stderr,"itep_FA5: nextKRA=%04o \n\n",regKRA);
+		if (err) return err;
+		break;
+	} 
         case OPCODE_STOP_017:    /* 017 = останов машины */
-        case OPCODE_STOP_037:    /* 037 = останов машины */
         case OPCODE_STOP_057:    /* 057 = останов машины */
 	case OPCODE_STOP_077:    /* 077 = останов машины */
 		delay += 24.0;

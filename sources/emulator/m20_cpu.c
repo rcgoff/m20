@@ -82,6 +82,7 @@
  *                    USE_NEW_ADD - Shurabura addition, else - new_addition_v44. USE_ADD_SBST = USE_NEW_ADD.
  *  26-May-2022  LOY  ITEP mode: draft FA command, regRA to 7776 mapping. 
  *                    And also a little tab-space cleanup.
+ *  29-May-2022  LOY  Bugfix in FA (ITEP mode) for jump commands.
  */
 
 #include "m20_defs.h"
@@ -2469,9 +2470,9 @@ shift:
 		regRK |= y << BITS_12;
 		regRK |=t;
 		fprintf(stderr,"itep_FA4: regRK=%015llo\n",regRK);
-		err = cpu_one_inst();
 		regKRA +=1;
 		regKRA &= MAX_ADDR_VALUE;
+		err = cpu_one_inst();
 		fprintf(stderr,"itep_FA5: nextKRA=%04o \n\n",regKRA);
 		if (err) return err;
 		break;

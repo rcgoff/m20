@@ -83,6 +83,7 @@
  *  26-May-2022  LOY  ITEP mode: draft FA command, regRA to 7776 mapping. 
  *                    And also a little tab-space cleanup.
  *  29-May-2022  LOY  Bugfix in FA (ITEP mode) for jump commands.
+ *  30-May-2022  LOY  Yet another bugfix in FA (correct debug printing)
  */
 
 #include "m20_defs.h"
@@ -533,7 +534,7 @@ t_value mosu_load (int addr)
 
 
 /*
- * Запись слова в памяти.
+ * Запись слова в память.
  */
 void mosu_store (int addr, t_value val)
 {
@@ -2455,7 +2456,7 @@ shift:
 		x = mosu_load (a1) >> BITS_12 & MAX_ADDR_VALUE;
 		y = mosu_load (a2) >> BITS_12 & MAX_ADDR_VALUE;
 		t = mosu_load (a3) >> BITS_12 & MAX_ADDR_VALUE;
-		fprintf(stderr,"itep_FA1: (A)2=%04o, (B)2=%04o, C(2)=%04o\n",x,y,t);
+		fprintf(stderr,"itep_FA1: (A)2=%04llo, (B)2=%04llo, (C)2=%04llo\n",x,y,t);
 		newcmd=mosu_load (regKRA);
 		fprintf(stderr,"itep_FA2: updKRA=%04o, (updKRA)=%015llo\n",regKRA,newcmd);
 		x += newcmd >> BITS_24 & MAX_ADDR_VALUE;
@@ -2464,7 +2465,7 @@ shift:
 		y &= MAX_ADDR_VALUE;
 		t += newcmd & MAX_ADDR_VALUE;
 		t &= MAX_ADDR_VALUE;
-		fprintf(stderr,"itep_FA3: (A)2+K=%04o, (B)2+L=%04o, C(2)+M=%04o\n",x,y,t);
+		fprintf(stderr,"itep_FA3: (A)2+K=%04llo, (B)2+L=%04llo, (C)2+M=%04llo\n",x,y,t);
 		regRK = newcmd & EXPONENT;
 		regRK |= x << BITS_24;
 		regRK |= y << BITS_12;

@@ -83,7 +83,8 @@
  *  26-May-2022  LOY  ITEP mode: draft FA command, regRA to 7776 mapping. 
  *                    And also a little tab-space cleanup.
  *  29-May-2022  LOY  Bugfix in FA (ITEP mode) for jump commands.
- *  30-May-2022  LOY  Yet another bugfix in FA (correct debug printing)
+ *  30-May-2022  LOY  Yet another bugfix in FA (correct debug printing);
+ *                    Order of steps in jump commands 16,36,56,76 changed (for correct regRK to 7777 mapping)
  */
 
 #include "m20_defs.h"
@@ -2507,29 +2508,29 @@ shift:
 
 	case OPCODE_JUMP_WITH_RETURN:       /* 016 = передача управления с возвратом */
 		regRR = 016000000000000LL | (a1 << BITS_12);
-		mosu_store (a3, regRR);
 		regKRA = a2;
+		mosu_store (a3, regRR);
 		delay += 24.0;
 		break;
 
 	case OPCODE_COND_JUMP_BY_SIG_W_1:   /* 036 = передача управления по условию w=1 */
 		regRR = mosu_load (a1);
-		mosu_store (a3, regRR);
 		if (trgSW) regKRA = a2;
+		mosu_store (a3, regRR);
 		delay += 24.0;
 		break;
 
 	case OPCODE_JUMP_BY_ADDR:           /* 056 = передача управления */
 		regRR = mosu_load (a1);
-		mosu_store (a3, regRR);
 		regKRA = a2;
+		mosu_store (a3, regRR);
 		delay += 24.0;
 		break;
 
 	case OPCODE_COND_JUMP_BY_SIG_W_0:   /* 076 = передача управления по условию w=0 */
 		regRR = mosu_load (a1);
-		mosu_store (a3, regRR);
 		if (!trgSW) regKRA = a2;
+		mosu_store (a3, regRR);
 		delay += 24.0;
 		break;
 

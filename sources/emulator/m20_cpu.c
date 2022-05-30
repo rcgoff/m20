@@ -84,7 +84,8 @@
  *                    And also a little tab-space cleanup.
  *  29-May-2022  LOY  Bugfix in FA (ITEP mode) for jump commands.
  *  30-May-2022  LOY  Yet another bugfix in FA (correct debug printing);
- *                    Order of steps in jump commands 16,36,56,76 changed (for correct regRK to 7777 mapping)
+ *                    Order of steps in jump commands 16,36,56,76 changed (for correct regRK to 7777 mapping);
+ *                    Draft regRK to 7777 mapping.
  */
 
 #include "m20_defs.h"
@@ -212,6 +213,7 @@ int active_cdp = 0;
 t_stat cpu_examine (t_value *vptr, t_addr addr, UNIT *uptr, int32 sw);
 t_stat cpu_deposit (t_value val, t_addr addr, UNIT *uptr, int32 sw);
 t_stat cpu_reset (DEVICE *dptr);
+t_stat cpu_one_inst ();
 
 
 
@@ -543,18 +545,21 @@ void mosu_store (int addr, t_value val)
     if (addr == 0) return;
 
     if (mosu_mode == MOSU_MODE_II) {
-      if (addr == 07770) { val = 0;     }
+/*      if (addr == 07770) { val = 0;     }
       if (addr == 07771) { val = RPU1;  }
       if (addr == 07772) { val = RPU2;  }
       if (addr == 07773) { val = RPU3;  }
       if (addr == 07774) { val = RPU4;  }
       if (addr == 07775) { val = regRR; }
+      */
       if (itep_mode) {
 	if (addr == 07776)
 		{ regRA = val >> BITS_12 & MAX_ADDR_VALUE; }
-/*	if (addr == 07777) {
-		//РК */
+	if (addr == 07777) {
+		regRK = val;
+		cpu_one_inst();
 	}
+      }
       else {
       if (addr == 07776) { val = 0;     }
       if (addr == 07777) { val = 0;     }

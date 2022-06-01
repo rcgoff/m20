@@ -86,6 +86,7 @@
  *  30-May-2022  LOY  Yet another bugfix in FA (correct debug printing);
  *                    Order of steps in jump commands 16,36,56,76 changed (for correct regRK to 7777 mapping);
  *                    Draft regRK to 7777 mapping.
+ *  01-Jun-2022  LOY  Draft trace of commmands executed by FA and RK-to-7777
  */
 
 #include "m20_defs.h"
@@ -214,7 +215,6 @@ t_stat cpu_examine (t_value *vptr, t_addr addr, UNIT *uptr, int32 sw);
 t_stat cpu_deposit (t_value val, t_addr addr, UNIT *uptr, int32 sw);
 t_stat cpu_reset (DEVICE *dptr);
 t_stat cpu_one_inst ();
-
 
 
 /*
@@ -498,7 +498,99 @@ t_stat cpu_reset (DEVICE *dptr)
 }
 
 
+void trace_before_run(pa1,pa2,pa3,pt_ra,pt_sw,pt_rr,pm1,pm2,pm3,irreg)
+int *pa1, *pa2, *pa3, *pt_sw, irreg;
+uint16 *pt_ra;
+t_value *pm1, *pm2, *pm3, *pt_rr;
+{
+  if (sim_deb && cpu_dev.dctrl) {
+	int a1,a2,a3,addr_tags;
+	    if (disable_is2_trace) {
+	      if ((regKRA >= 07200) && (regKRA <= 07767)) goto trace_before_done;
+	    }
+	    addr_tags = regRK >> BITS_42 & MAX_ADDR_TAG_VALUE;
+	    a1 = regRK >> BITS_24 & MAX_ADDR_VALUE;
+	    a2 = regRK >> BITS_12 & MAX_ADDR_VALUE;
+	    a3 = regRK >> BITS_0  & MAX_ADDR_VALUE;
+	    if (addr_tags & 4) a1 = (a1 + regRA) & MAX_ADDR_VALUE;
+	    if (addr_tags & 2) a2 = (a2 + regRA) & MAX_ADDR_VALUE;
+	    if (addr_tags & 1) a3 = (a3 + regRA) & MAX_ADDR_VALUE;
+	    /*fprintf (sim_deb, "*** (%.0f) %04o: ", sim_gtime(), RVK);*/
+            if (debug_dump_regs || debug_dump_mem) {
+                int i;
+                for( i=0; i<100; i++ ) fprintf (sim_deb, "-");
+                fprintf (sim_deb, "\n");
+             }
+	     if (irreg) fprintf (sim_deb, "cpu: byRK: ");
+	     else fprintf (sim_deb, "cpu: %04o: ", regKRA);
+	    fprint_sym (sim_deb, regKRA, &regRK, 0, SWMASK ('M'));
+	    fprintf (sim_deb, "\n");
+	    if (debug_dump_regs) {
+	      *pt_ra = regRA; *pt_rr = regRR; *pt_sw = trgSW;
+	      fprintf (sim_deb, "cpu: [dreg]: ra=%04o,  sw=%d,  rr=%015llo\n", *pt_ra, *pt_sw, *pt_rr );
+	    }
+	    if (debug_dump_mem) {
+	      *pm1 = MOSU[a1]; *pm2 = MOSU[a2]; *pm3 = MOSU[a3];
+	      fprintf (sim_deb, "cpu: [dmem]: a1[%04o]=%015llo,  a2[%04o]=%015llo,  a3[%04o]=%015llo\n",
+                       a1, *pm1, a2, *pm2, a3, *pm3 );
+              if (debug_dump_modern_mem) {
+	          fprintf (sim_deb, "cpu: [fmem]: a1[%04o]=%.12f,  a2[%04o]=%.12f,  a3[%04o]=%.12f\n",
+                           a1,m20_to_ieee(MOSU[a1]), a2,m20_to_ieee(MOSU[a2]), a3,m20_to_ieee(MOSU[a3]) );
+              }
+	    }
+            if (debug_dump_regs || debug_dump_mem) fprintf (sim_deb, "\n");
+	    *pa1=a1; *pa2=a2; *pa3=a3;
+          trace_before_done: {};
+  }
+}
 
+
+void trace_after_run(a1,a2,a3,t_ra,t_sw,t_rr,m1,m2,m3)
+int a1, a2, a3, t_sw;
+uint16 t_ra;
+t_value m1, m2, m3, t_rr;
+{
+if (sim_deb && cpu_dev.dctrl) {
+  char c1,c2,c3;
+	    if (disable_is2_trace) {
+	      if ((regKRA >= 07200) && (regKRA <= 07767)) goto trace_after_done;
+	    }
+	           if (debug_dump_regs) {
+	             c1='-'; c2='-'; c3='-';
+	             if (t_ra != regRA) c1 = '*';
+	             if (t_sw != trgSW) c2 = '*';
+	             if (t_rr != regRR) c3 = '*';
+	             fprintf (sim_deb, "cpu: [dreg]: ra=%04o%c, sw=%d%c, rr=%015llo%c\n",
+                              regRA, c1, trgSW, c2, regRR, c3 );
+	           }
+	           if (debug_dump_mem) {
+                     c1='-'; c2='-'; c3='-';
+                     if (m1 != MOSU[a1]) c1 = '*';
+                     if (m2 != MOSU[a2]) c2 = '*';
+                     if (m3 != MOSU[a3]) c3 = '*';
+	             fprintf (sim_deb, "cpu: [dmem]: a1[%04o%c]=%015llo, a2[%04o%c]=%015llo, a3[%04o%c]=%015llo\n",
+                              a1, c1, MOSU[a1], a2, c2, MOSU[a2], a3, c3, MOSU[a3] );
+                     if (debug_dump_modern_mem) {
+	                 fprintf (sim_deb, "cpu: [fmem]: a1[%04o%c]=%.12f,  a2[%04o%c]=%.12f,  a3[%04o%c]=%.12f\n",
+                          a1,c1,m20_to_ieee(MOSU[a1]), a2,c2,m20_to_ieee(MOSU[a2]), a3,c3,m20_to_ieee(MOSU[a3]) );
+                     }
+	           }
+	           if (debug_dump_regs || debug_dump_mem) fprintf (sim_deb, "\n");
+          trace_after_done: {};
+  }
+}
+
+t_stat irregular_cmd()
+{
+	int a1,a2,a3,t_sw;
+	uint16 t_ra;
+	t_value m1,m2,m3,t_rr;
+	t_stat err;
+		trace_before_run(&a1,&a2,&a3,&t_ra,&t_sw,&t_rr,&m1,&m2,&m3,1);
+		err=cpu_one_inst();
+		trace_after_run(a1,a2,a3,t_ra,t_sw,t_rr,m1,m2,m3);
+		return err;
+}
 
 /*
  * Считывание слова из памяти.
@@ -557,7 +649,7 @@ void mosu_store (int addr, t_value val)
 		{ regRA = val >> BITS_12 & MAX_ADDR_VALUE; }
 	if (addr == 07777) {
 		regRK = val;
-		cpu_one_inst();
+		irregular_cmd();
 	}
       }
       else {
@@ -2479,7 +2571,7 @@ shift:
 		fprintf(stderr,"itep_FA4: regRK=%015llo\n",regRK);
 		regKRA +=1;
 		regKRA &= MAX_ADDR_VALUE;
-		err = cpu_one_inst();
+		err = irregular_cmd();
 		fprintf(stderr,"itep_FA5: nextKRA=%04o \n\n",regKRA);
 		if (err) return err;
 		break;
@@ -2736,7 +2828,6 @@ t_stat sim_instr (void)
     int addr_tags, a1, a2, a3, t_sw, op, i;
     uint16 t_ra;
     t_value m1,m2,m3,t_rr;
-    char c1,c2,c3;
     double old_delay, instr_time;
 
     /* Restore register state */
@@ -2769,42 +2860,7 @@ t_stat sim_instr (void)
           op = regRK >> BITS_36 & MAX_OPCODE_VALUE;
 	}
 
-	if (sim_deb && cpu_dev.dctrl) {
-	    if (disable_is2_trace) {
-	      if ((regKRA >= 07200) && (regKRA <= 07767)) goto trace_before_done;
-	    }
-	    addr_tags = regRK >> BITS_42 & MAX_ADDR_TAG_VALUE;
-	    a1 = regRK >> BITS_24 & MAX_ADDR_VALUE;
-	    a2 = regRK >> BITS_12 & MAX_ADDR_VALUE;
-	    a3 = regRK >> BITS_0  & MAX_ADDR_VALUE;
-	    if (addr_tags & 4) a1 = (a1 + regRA) & MAX_ADDR_VALUE;
-	    if (addr_tags & 2) a2 = (a2 + regRA) & MAX_ADDR_VALUE;
-	    if (addr_tags & 1) a3 = (a3 + regRA) & MAX_ADDR_VALUE;
-	    /*fprintf (sim_deb, "*** (%.0f) %04o: ", sim_gtime(), RVK);*/
-            if (debug_dump_regs || debug_dump_mem) {
-                int i;
-                for( i=0; i<100; i++ ) fprintf (sim_deb, "-");
-                fprintf (sim_deb, "\n");
-             }
-	    fprintf (sim_deb, "cpu: %04o: ", regKRA);
-	    fprint_sym (sim_deb, regKRA, &regRK, 0, SWMASK ('M'));
-	    fprintf (sim_deb, "\n");
-	    if (debug_dump_regs) {
-	      t_ra = regRA; t_rr = regRR; t_sw = trgSW;
-	      fprintf (sim_deb, "cpu: [dreg]: ra=%04o,  sw=%d,  rr=%015llo\n", t_ra, t_sw, t_rr );
-	    }
-	    if (debug_dump_mem) {
-	      m1 = MOSU[a1]; m2 = MOSU[a2]; m3 = MOSU[a3];
-	      fprintf (sim_deb, "cpu: [dmem]: a1[%04o]=%015llo,  a2[%04o]=%015llo,  a3[%04o]=%015llo\n",
-                       a1, m1, a2, m2, a3, m3 );
-              if (debug_dump_modern_mem) {
-	          fprintf (sim_deb, "cpu: [fmem]: a1[%04o]=%.12f,  a2[%04o]=%.12f,  a3[%04o]=%.12f\n",
-                           a1,m20_to_ieee(MOSU[a1]), a2,m20_to_ieee(MOSU[a2]), a3,m20_to_ieee(MOSU[a3]) );
-              }
-	    }
-            if (debug_dump_regs || debug_dump_mem) fprintf (sim_deb, "\n");
-          trace_before_done: {};
-	}
+	trace_before_run(&a1,&a2,&a3,&t_ra,&t_sw,&t_rr,&m1,&m2,&m3,0);
 
 	regKRA += 1;				/* increment RVK */
 
@@ -2852,33 +2908,7 @@ t_stat sim_instr (void)
           }
 	}
 
-        if (sim_deb && cpu_dev.dctrl) {
-	    if (disable_is2_trace) {
-	      if ((regKRA >= 07200) && (regKRA <= 07767)) goto trace_after_done;
-	    }
-	           if (debug_dump_regs) {
-	             c1='-'; c2='-'; c3='-';
-	             if (t_ra != regRA) c1 = '*';
-	             if (t_sw != trgSW) c2 = '*';
-	             if (t_rr != regRR) c3 = '*';
-	             fprintf (sim_deb, "cpu: [dreg]: ra=%04o%c, sw=%d%c, rr=%015llo%c\n",
-                              regRA, c1, trgSW, c2, regRR, c3 );
-	           }
-	           if (debug_dump_mem) {
-                     c1='-'; c2='-'; c3='-';
-                     if (m1 != MOSU[a1]) c1 = '*';
-                     if (m2 != MOSU[a2]) c2 = '*';
-                     if (m3 != MOSU[a3]) c3 = '*';
-	             fprintf (sim_deb, "cpu: [dmem]: a1[%04o%c]=%015llo, a2[%04o%c]=%015llo, a3[%04o%c]=%015llo\n",
-                              a1, c1, MOSU[a1], a2, c2, MOSU[a2], a3, c3, MOSU[a3] );
-                     if (debug_dump_modern_mem) {
-	                 fprintf (sim_deb, "cpu: [fmem]: a1[%04o%c]=%.12f,  a2[%04o%c]=%.12f,  a3[%04o%c]=%.12f\n",
-                          a1,c1,m20_to_ieee(MOSU[a1]), a2,c2,m20_to_ieee(MOSU[a2]), a3,c3,m20_to_ieee(MOSU[a3]) );
-                     }
-	           }
-	           if (debug_dump_regs || debug_dump_mem) fprintf (sim_deb, "\n");
-          trace_after_done: {};
-	}
+	trace_after_run(a1,a2,a3,t_ra,t_sw,t_rr,m1,m2,m3);
 
 	//getchar();
 

@@ -86,7 +86,8 @@
  *  30-May-2022  LOY  Yet another bugfix in FA (correct debug printing);
  *                    Order of steps in jump commands 16,36,56,76 changed (for correct regRK to 7777 mapping);
  *                    Draft regRK to 7777 mapping.
- *  01-Jun-2022  LOY  Draft trace of commmands executed by FA and RK-to-7777
+ *  01-Jun-2022  LOY  Draft trace of commmands executed by FA and RK-to-7777;
+ *                    Fixed MOSU_MODE_II handling in mosu_store
  */
 
 #include "m20_defs.h"
@@ -636,29 +637,17 @@ void mosu_store (int addr, t_value val)
     addr &= MAX_ADDR_VALUE;
     if (addr == 0) return;
 
-    if (mosu_mode == MOSU_MODE_II) {
-/*      if (addr == 07770) { val = 0;     }
-      if (addr == 07771) { val = RPU1;  }
-      if (addr == 07772) { val = RPU2;  }
-      if (addr == 07773) { val = RPU3;  }
-      if (addr == 07774) { val = RPU4;  }
-      if (addr == 07775) { val = regRR; }
-      */
-      if (itep_mode) {
-	if (addr == 07776)
-		{ regRA = val >> BITS_12 & MAX_ADDR_VALUE; }
-	if (addr == 07777) {
-		regRK = val;
-		irregular_cmd();
+    if ( (mosu_mode == MOSU_MODE_II) && (addr > 07767) ) {
+	if (itep_mode) {
+		if (addr == 07776)
+			{ regRA = val >> BITS_12 & MAX_ADDR_VALUE; }
+		if (addr == 07777) {
+			regRK = val;
+			irregular_cmd();
+		}
 	}
-      }
-      else {
-      if (addr == 07776) { val = 0;     }
-      if (addr == 07777) { val = 0;     }
-	}
-      }
-
-    MOSU[addr] = val;
+    }
+    else MOSU[addr] = val;
 }
 
 

@@ -88,6 +88,7 @@
  *                    Draft regRK to 7777 mapping.
  *  01-Jun-2022  LOY  Draft trace of commmands executed by FA and RK-to-7777;
  *                    Fixed MOSU_MODE_II handling in mosu_store
+ *  06-Jun-2022  LOY  Write to RA by writing to 7776 from SIMH file (cpu_deposit)
  */
 
 #include "m20_defs.h"
@@ -465,7 +466,13 @@ t_stat cpu_deposit (t_value val, t_addr addr, UNIT *uptr, int32 sw)
      if (addr == 07773) return STOP_WRITE_TO_RO_MEM_LOC;
      if (addr == 07774) return STOP_WRITE_TO_RO_MEM_LOC;
      if (addr == 07775) return STOP_WRITE_TO_RO_MEM_LOC;
-     if (addr == 07776) return STOP_WRITE_TO_RO_MEM_LOC;
+     if (addr == 07776) {
+	if (itep_mode) {
+		if (addr == 07776) {
+			regRA = val >> BITS_12 & MAX_ADDR_VALUE;
+			return SCPE_OK;  }
+		else return STOP_WRITE_TO_RO_MEM_LOC; }
+     }
      if (addr == 07777) return STOP_WRITE_TO_RO_MEM_LOC;
    }
 

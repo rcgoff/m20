@@ -88,7 +88,8 @@
  *                    Draft regRK to 7777 mapping.
  *  01-Jun-2022  LOY  Draft trace of commmands executed by FA and RK-to-7777;
  *                    Fixed MOSU_MODE_II handling in mosu_store
- *  06-Jun-2022  LOY  Write to RA by writing to 7776 from SIMH file (cpu_deposit)
+ *  06-Jun-2022  LOY  Write to RA by writing to 7776 from SIMH file (cpu_deposit);
+ *                    FA fix (modifiers use in the 2nd word)
  */
 
 #include "m20_defs.h"
@@ -2560,7 +2561,7 @@ shift:
 		t += newcmd & MAX_ADDR_VALUE;
 		t &= MAX_ADDR_VALUE;
 		fprintf(stderr,"itep_FA3: (A)2+K=%04llo, (B)2+L=%04llo, (C)2+M=%04llo\n",x,y,t);
-		regRK = newcmd & EXPONENT;
+		regRK = newcmd & EXP_SIGN_TAG;
 		regRK |= x << BITS_24;
 		regRK |= y << BITS_12;
 		regRK |=t;

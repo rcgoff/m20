@@ -1066,7 +1066,7 @@ t_stat new_addition_v44 (t_value *result, t_value x, t_value y, int no_round, in
 
 	delta_exp = xexp - yexp;
     if (!no_round && (force_round || (((x ^ y) & SIGN) == 0))) {
-			fprintf(stderr,"xnormzero=%d ynormzero=%d \n",is_norm_zero(x),is_norm_zero(y));
+			if (arithmetic_op_debug) fprintf(stderr,"xnormzero=%d ynormzero=%d \n",is_norm_zero(x),is_norm_zero(y));
 		if ( (xexp != yexp) && (force_round || (!(is_norm_zero(x)) && !(is_norm_zero(y))))) {
 			//Round process is set 1 to auxilary bit of not shifted summand only
 			if (delta_exp > 0)  xm1 |= 1;
@@ -1157,7 +1157,7 @@ t_stat new_addition_v44 (t_value *result, t_value x, t_value y, int no_round, in
 
     /* check for machine zero */
     if ((r == 0) || (rexp < 0)) {
-	  fprintf( stderr, "add: return NORMZERO: rexp=%d \n", rexp );
+      if (arithmetic_op_debug)  fprintf( stderr, "add: return NORMZERO: rexp=%d \n", rexp );
       r = norm_zero();
       goto final;
     }
@@ -1322,7 +1322,7 @@ t_stat  new_arithmetic_op( t_value * result, t_value x, t_value y, int op_code )
    n0 = (!beta_round)*(!v)*(!sigma)*(!delta1);
    e0 = n0;
 
-   fprintf( stderr, "rr=%d n0=%d e0=%d\n", rr, n0, e0 );
+   if (arithmetic_op_debug) fprintf( stderr, "rr=%d n0=%d e0=%d\n", rr, n0, e0 );
 
    if (delta == 0) {
      xx1 = x1 << AUX_BIT_SHIFT;
@@ -1408,7 +1408,7 @@ t_stat  new_arithmetic_op( t_value * result, t_value x, t_value y, int op_code )
        }
    }
 
-   fprintf( stderr, "TEMP: z=%015llo rr=%d\n", z, rr );
+   if (arithmetic_op_debug) fprintf( stderr, "TEMP: z=%015llo rr=%d\n", z, rr );
 
    // not so strong
    //if ((!beta_norm)) {
@@ -1729,7 +1729,8 @@ t_stat new_arithmetic_mult_op (t_value *result, t_value x, t_value y, int op_cod
    we can't pass Multiply Test 5   */
    if (rr_lo == 0 || (rr < 0)) {
 	   regRMR=norm_zero();
-	   fprintf( stderr, "FINAL: return NORMZERO_lo: rr=%d rr_hi=%015llo, t==%015llo, regRMR=%015llo\n\n", rr, rr_hi, t, regRMR );
+	   if (arithmetic_op_debug)
+		   fprintf( stderr, "FINAL: return NORMZERO_lo: rr=%d rr_hi=%015llo, t==%015llo, regRMR=%015llo\n\n", rr, rr_hi, t, regRMR );
    }
    else {
 	   regRMR = rr_lo;

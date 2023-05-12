@@ -27,7 +27,7 @@
  *  27-Feb-2015  DVS  Move auto skip zero address option into DRUM module
  *  06-Mar-2015  DVS  Added drum read/write data dump debugging option
  *  08-Mar-2015  DVS  Added more checksum control logic
- *  13-May-2023  LOY  Make variables for external devices external itself 
+ *  13-May-2023  LOY  Make variables for external devices external itself
  *
  */
 
@@ -39,12 +39,12 @@
 /*
  * External devices exchange parameters
  */
-extern int ext_io_op;			/* УЧ - условное число */
-extern int ext_io_dev_zone_addr;		/* А_МЗУ - начальный адрес на барабане/ленте/буфере_печ. */
-extern int ext_io_ram_start;		/* Н_МОЗУ - начальный адрес памяти */
-extern int ext_io_ram_end;		/* К_МОЗУ - конечный адрес памяти */
-extern int ext_io_ram_jump;		/* П_МОЗУ - адрес памяти передачи упрваления если нет совпадения кс */
-extern int ext_io_ram_chksum;		/* КС_МОЗУ - адрес памяти для запис КС */
+extern int ext_io_op;			/* РЈР§ - СѓСЃР»РѕРІРЅРѕРµ С‡РёСЃР»Рѕ */
+extern int ext_io_dev_zone_addr;	/* Рђ_РњР—РЈ - РЅР°С‡Р°Р»СЊРЅС‹Р№ Р°РґСЂРµСЃ РЅР° Р±Р°СЂР°Р±Р°РЅРµ/Р»РµРЅС‚Рµ/Р±СѓС„РµСЂРµ_РїРµС‡. */
+extern int ext_io_ram_start;		/* Рќ_РњРћР—РЈ - РЅР°С‡Р°Р»СЊРЅС‹Р№ Р°РґСЂРµСЃ РїР°РјСЏС‚Рё */
+extern int ext_io_ram_end;		/* Рљ_РњРћР—РЈ - РєРѕРЅРµС‡РЅС‹Р№ Р°РґСЂРµСЃ РїР°РјСЏС‚Рё */
+extern int ext_io_ram_jump;		/* Рџ_РњРћР—РЈ - Р°РґСЂРµСЃ РїР°РјСЏС‚Рё РїРµСЂРµРґР°С‡Рё СѓРїСЂРІР°Р»РµРЅРёСЏ РµСЃР»Рё РЅРµС‚ СЃРѕРІРїР°РґРµРЅРёСЏ РєСЃ */
+extern int ext_io_ram_chksum;		/* РљРЎ_РњРћР—РЈ - Р°РґСЂРµСЃ РїР°РјСЏС‚Рё РґР»СЏ Р·Р°РїРёСЃ РљРЎ */
 
 
 t_stat drum_svc (UNIT *uptr);
@@ -208,9 +208,9 @@ t_stat drum_detach (UNIT *uptr)
 
 
 /*
- * Запись на барабан.
- * Если параметр sum ненулевой, посчитываем и кладём туда контрольную
- * сумму массива. Также запмсываем сумму в слово last+1 на барабане.
+ * Р—Р°РїРёСЃСЊ РЅР° Р±Р°СЂР°Р±Р°РЅ.
+ * Р•СЃР»Рё РїР°СЂР°РјРµС‚СЂ sum РЅРµРЅСѓР»РµРІРѕР№, РїРѕСЃС‡РёС‚С‹РІР°РµРј Рё РєР»Р°РґС‘Рј С‚СѓРґР° РєРѕРЅС‚СЂРѕР»СЊРЅСѓСЋ
+ * СЃСѓРјРјСѓ РјР°СЃСЃРёРІР°. РўР°РєР¶Рµ Р·Р°РїРјСЃС‹РІР°РµРј СЃСѓРјРјСѓ РІ СЃР»РѕРІРѕ last+1 РЅР° Р±Р°СЂР°Р±Р°РЅРµ.
  */
 t_stat drum_write (int drum_no, int addr, int first, int last, t_value *sum,int * ocodes,int no_mosu_access,
                    int disable_control)
@@ -376,7 +376,7 @@ t_stat drum_read (int drum_no, int addr, int first, int last, t_value *sum,int *
 
 
 /*
- * Execute drum i/o operationВыполнение.
+ * Execute drum i/o operationР’С‹РїРѕР»РЅРµРЅРёРµ.
  * All parameters are containg in operands CW, A_MSU, S_MOSU, E_MOSU.
  */
 t_stat drum_io(t_value *sum, int * ocodes)

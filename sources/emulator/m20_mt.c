@@ -32,14 +32,14 @@
 
 
 /*
- * Параметры обмена с внешним устройством.
+ * РџР°СЂР°РјРµС‚СЂС‹ РѕР±РјРµРЅР° СЃ РІРЅРµС€РЅРёРј СѓСЃС‚СЂРѕР№СЃС‚РІРѕРј.
  */
-extern int ext_io_op;			/* УЧ - условное число */
-extern int ext_io_dev_zone_addr;		/* А_МЗУ - начальный адрес на барабане/ленте/буфере_печ. */
-extern int ext_io_ram_start;		/* Н_МОЗУ - начальный адрес памяти */
-extern int ext_io_ram_end;		/* К_МОЗУ - конечный адрес памяти */
-extern int ext_io_ram_jump;		/* П_МОЗУ - адрес памяти передачи упрваления если нет совпадения кс */
-extern int ext_io_ram_chksum;		/* КС_МОЗУ - адрес памяти для запис КС */
+extern int ext_io_op;			/* РЈР§ - СѓСЃР»РѕРІРЅРѕРµ С‡РёСЃР»Рѕ */
+extern int ext_io_dev_zone_addr;	/* Рђ_РњР—РЈ - РЅР°С‡Р°Р»СЊРЅС‹Р№ Р°РґСЂРµСЃ РЅР° Р±Р°СЂР°Р±Р°РЅРµ/Р»РµРЅС‚Рµ/Р±СѓС„РµСЂРµ_РїРµС‡. */
+extern int ext_io_ram_start;		/* Рќ_РњРћР—РЈ - РЅР°С‡Р°Р»СЊРЅС‹Р№ Р°РґСЂРµСЃ РїР°РјСЏС‚Рё */
+extern int ext_io_ram_end;		/* Рљ_РњРћР—РЈ - РєРѕРЅРµС‡РЅС‹Р№ Р°РґСЂРµСЃ РїР°РјСЏС‚Рё */
+extern int ext_io_ram_jump;		/* Рџ_РњРћР—РЈ - Р°РґСЂРµСЃ РїР°РјСЏС‚Рё РїРµСЂРµРґР°С‡Рё СѓРїСЂРІР°Р»РµРЅРёСЏ РµСЃР»Рё РЅРµС‚ СЃРѕРІРїР°РґРµРЅРёСЏ РєСЃ */
+extern int ext_io_ram_chksum;		/* РљРЎ_РњРћР—РЈ - Р°РґСЂРµСЃ РїР°РјСЏС‚Рё РґР»СЏ Р·Р°РїРёСЃ РљРЎ */
 
 
 t_stat mt_svc (UNIT *uptr);
@@ -123,7 +123,7 @@ static t_value  temp_zone_buf[MAX_TAPE_ZONE_SIZE+1];
 
 
 /*
- *  Событие: закончен обмен с МЛ.
+ *  РЎРѕР±С‹С‚РёРµ: Р·Р°РєРѕРЅС‡РµРЅ РѕР±РјРµРЅ СЃ РњР›.
  */
 t_stat mt_svc (UNIT *u)
 {
@@ -186,7 +186,7 @@ t_stat mt_detach (UNIT *uptr)
 
 
 /*
- *  Разметка магнитной ленты (МЛ) или форматирование
+ *  Р Р°Р·РјРµС‚РєР° РјР°РіРЅРёС‚РЅРѕР№ Р»РµРЅС‚С‹ (РњР›) РёР»Рё С„РѕСЂРјР°С‚РёСЂРѕРІР°РЅРёРµ
  */
 t_stat mt_format_tape (t_value *sum, int * ocodes, int first, int last)
 {
@@ -337,9 +337,9 @@ t_stat mt_format_tape (t_value *sum, int * ocodes, int first, int last)
 
 
 /*
- * Запись на МЛ.
- * Если параметр sum ненулевой, посчитываем и кладём туда контрольную
- * сумму массива. Также запмсываем сумму в слово last+1 на МЛ.
+ * Р—Р°РїРёСЃСЊ РЅР° РњР›.
+ * Р•СЃР»Рё РїР°СЂР°РјРµС‚СЂ sum РЅРµРЅСѓР»РµРІРѕР№, РїРѕСЃС‡РёС‚С‹РІР°РµРј Рё РєР»Р°РґС‘Рј С‚СѓРґР° РєРѕРЅС‚СЂРѕР»СЊРЅСѓСЋ
+ * СЃСѓРјРјСѓ РјР°СЃСЃРёРІР°. РўР°РєР¶Рµ Р·Р°РїРјСЃС‹РІР°РµРј СЃСѓРјРјСѓ РІ СЃР»РѕРІРѕ last+1 РЅР° РњР›.
  */
 t_stat mt_write (int mt_no, int user_zone_num, int first, int last, t_value *sum, int * ocodes, 
                  int no_mosu_access, int disable_control)
@@ -363,7 +363,7 @@ t_stat mt_write (int mt_no, int user_zone_num, int first, int last, t_value *sum
 
     if (tape_auto_skip_zero_address && (first==0) && (last>0)) first++;
     userwords = last - first + 1;
-    /* Неверная длина записи на МЛ (д.б. не более макс.длины зоны)*/
+    /* РќРµРІРµСЂРЅР°СЏ РґР»РёРЅР° Р·Р°РїРёСЃРё РЅР° РњР› (Рґ.Р±. РЅРµ Р±РѕР»РµРµ РјР°РєСЃ.РґР»РёРЅС‹ Р·РѕРЅС‹)*/
     if ((userwords < MIN_TAPE_ZONE_SIZE) || (userwords > MAX_TAPE_ZONE_SIZE)) return STOP_TAPEBADWLEN;
 
     /* detect tape length */
@@ -392,7 +392,7 @@ t_stat mt_write (int mt_no, int user_zone_num, int first, int last, t_value *sum
         if (sim_deb && mt_dev.dctrl) fprintf (sim_deb, "mt: mt_write(): read_zone_num_count=%d\n", count);
         if (ferror (mt_unit[mt_no].fileref)) return SCPE_IOERR;
 
-        /* Чтение неинициализированной ленты? */
+        /* Р§С‚РµРЅРёРµ РЅРµРёРЅРёС†РёР°Р»РёР·РёСЂРѕРІР°РЅРЅРѕР№ Р»РµРЅС‚С‹? */
         if (count != 1) return STOP_TAPEINVDATA;
 
         codes_num++;
@@ -473,7 +473,7 @@ t_stat mt_write (int mt_no, int user_zone_num, int first, int last, t_value *sum
         if (sim_deb && mt_dev.dctrl) fprintf (sim_deb, "mt: mt_write(): read_data_zone_count=%d\n", count);
         if (ferror (mt_unit[mt_no].fileref)) return SCPE_IOERR;
 
-        /* Чтение неинициализированной ленты? */
+        /* Р§С‚РµРЅРёРµ РЅРµРёРЅРёС†РёР°Р»РёР·РёСЂРѕРІР°РЅРЅРѕР№ Р»РµРЅС‚С‹? */
         if (count != nwords) return STOP_TAPEINVDATA;
 
         codes_num += nwords;
@@ -485,7 +485,7 @@ t_stat mt_write (int mt_no, int user_zone_num, int first, int last, t_value *sum
         if (sim_deb && mt_dev.dctrl) fprintf (sim_deb, "mt: mt_write(): read_chksum_count=%d\n", count);
         if (ferror (mt_unit[mt_no].fileref)) return SCPE_IOERR;
 
-        /* Чтение неинициализированной ленты? */
+        /* Р§С‚РµРЅРёРµ РЅРµРёРЅРёС†РёР°Р»РёР·РёСЂРѕРІР°РЅРЅРѕР№ Р»РµРЅС‚С‹? */
         if (count != 1) return STOP_TAPEINVDATA;
 
         codes_num++;
@@ -517,7 +517,7 @@ t_stat mt_write (int mt_no, int user_zone_num, int first, int last, t_value *sum
 
 
 /*
- * Чтение с МЛ
+ * Р§С‚РµРЅРёРµ СЃ РњР›
  */
 t_stat mt_read (int mt_no, int user_zone_num, int first, int last, t_value *sum, int * ocodes, 
                 int no_mosu_access, int disable_control)
@@ -537,7 +537,7 @@ t_stat mt_read (int mt_no, int user_zone_num, int first, int last, t_value *sum,
 
     if (tape_auto_skip_zero_address && (first==0) && (last>0)) first++;
     userwords = last - first + 1;
-    /* Неверная длина записи на МЛ (не более макс.длины зоны)*/
+    /* РќРµРІРµСЂРЅР°СЏ РґР»РёРЅР° Р·Р°РїРёСЃРё РЅР° РњР› (РЅРµ Р±РѕР»РµРµ РјР°РєСЃ.РґР»РёРЅС‹ Р·РѕРЅС‹)*/
     if ((userwords < MIN_TAPE_ZONE_SIZE) || (userwords > MAX_TAPE_ZONE_SIZE)) return STOP_TAPEBADWLEN;
 
     if (sim_deb && mt_dev.dctrl) {
@@ -569,7 +569,7 @@ t_stat mt_read (int mt_no, int user_zone_num, int first, int last, t_value *sum,
         if (sim_deb && mt_dev.dctrl) fprintf (sim_deb, "mt: mt_read(): read_zone_num_count=%d\n", count);
         if (ferror (mt_unit[mt_no].fileref)) return SCPE_IOERR;
 
-	/* Чтение неинициализированной ленты */
+	/* Р§С‚РµРЅРёРµ РЅРµРёРЅРёС†РёР°Р»РёР·РёСЂРѕРІР°РЅРЅРѕР№ Р»РµРЅС‚С‹ */
         if (count != 1) return STOP_TAPEINVDATA;
 
         codes_num++;
@@ -592,7 +592,7 @@ t_stat mt_read (int mt_no, int user_zone_num, int first, int last, t_value *sum,
         if (sim_deb && mt_dev.dctrl) fprintf (sim_deb, "mt: mt_read(): read_userdata_zone_count=%d\n", count);
         if (ferror (mt_unit[mt_no].fileref)) return SCPE_IOERR;
 
-	/* Чтение неинициализированной ленты */
+	/* Р§С‚РµРЅРёРµ РЅРµРёРЅРёС†РёР°Р»РёР·РёСЂРѕРІР°РЅРЅРѕР№ Р»РµРЅС‚С‹ */
         if (count != nwords) return STOP_TAPEINVDATA;
 
         codes_num += nwords;
@@ -610,7 +610,7 @@ t_stat mt_read (int mt_no, int user_zone_num, int first, int last, t_value *sum,
         if (sim_deb && mt_dev.dctrl) fprintf (sim_deb, "mt: mt_read(): read_chksum_count=%d\n", count);
         if (ferror (mt_unit[mt_no].fileref)) return SCPE_IOERR;
 
-	/* Чтение неинициализированной ленты */
+	/* Р§С‚РµРЅРёРµ РЅРµРёРЅРёС†РёР°Р»РёР·РёСЂРѕРІР°РЅРЅРѕР№ Р»РµРЅС‚С‹ */
         if (count != 1) return STOP_TAPEINVDATA;
 
         codes_num++;
@@ -683,8 +683,8 @@ t_stat mt_read (int mt_no, int user_zone_num, int first, int last, t_value *sum,
 
 
 /*
- * Выполнение обращения к МЛ.
- * Все параметры находятся в регистрах УЧ, А_МЗУ, Н_МОЗУ, К_МОЗУ.
+ * Р’С‹РїРѕР»РЅРµРЅРёРµ РѕР±СЂР°С‰РµРЅРёСЏ Рє РњР›.
+ * Р’СЃРµ РїР°СЂР°РјРµС‚СЂС‹ РЅР°С…РѕРґСЏС‚СЃСЏ РІ СЂРµРіРёСЃС‚СЂР°С… РЈР§, Рђ_РњР—РЈ, Рќ_РњРћР—РЈ, Рљ_РњРћР—РЈ.
  */
 t_stat mt_tape_io(t_value *sum, int * ocodes)
 {

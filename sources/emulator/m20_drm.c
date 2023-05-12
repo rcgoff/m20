@@ -27,6 +27,7 @@
  *  27-Feb-2015  DVS  Move auto skip zero address option into DRUM module
  *  06-Mar-2015  DVS  Added drum read/write data dump debugging option
  *  08-Mar-2015  DVS  Added more checksum control logic
+ *  13-May-2023  LOY  Make variables for external devices external itself 
  *
  */
 
@@ -38,12 +39,12 @@
 /*
  * External devices exchange parameters
  */
-int ext_io_op;			/* УЧ - условное число */
-int ext_io_dev_zone_addr;	/* А_МЗУ - начальный адрес на барабане/ленте/буфере_печ. */
-int ext_io_ram_start;		/* Н_МОЗУ - начальный адрес памяти */
-int ext_io_ram_end;		/* К_МОЗУ - конечный адрес памяти */
-int ext_io_ram_jump;            /* П_МОЗУ - адрес памяти передачи упрваления если нет совпадения кс */
-int ext_io_ram_chksum;          /* КС_МОЗУ - адрес памяти для запис КС */
+extern int ext_io_op;			/* УЧ - условное число */
+extern int ext_io_dev_zone_addr;		/* А_МЗУ - начальный адрес на барабане/ленте/буфере_печ. */
+extern int ext_io_ram_start;		/* Н_МОЗУ - начальный адрес памяти */
+extern int ext_io_ram_end;		/* К_МОЗУ - конечный адрес памяти */
+extern int ext_io_ram_jump;		/* П_МОЗУ - адрес памяти передачи упрваления если нет совпадения кс */
+extern int ext_io_ram_chksum;		/* КС_МОЗУ - адрес памяти для запис КС */
 
 
 t_stat drum_svc (UNIT *uptr);

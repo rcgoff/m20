@@ -181,6 +181,7 @@ typedef  struct parsed_line {
   char   addr_3_name[MAX_ADDRESS_NAME_SIZE+1];
   char   opcode_sym[MAX_OPCODE_SYM_SIZE+1];
   OBJECT_CODE  obj_code_line;
+  int    next_line;
 } PARSED_LINE, *PPARSED_LINE;
 
 
@@ -964,6 +965,8 @@ void  parse_input_assembly_file( char * filename, PSYM_TABLES  p_sym_tables )
        line_idx = read_lines_num-1;
 
        parsed_lines_array[line_idx].line_num = read_lines_num;
+       parsed_lines_array[line_idx].next_line = INT_MAX;
+       if (line_idx != 0) parsed_lines_array[line_idx - 1].next_line = line_idx;
        if (slen > MAX_TEXT_LINE_SIZE) {
          slen = MAX_TEXT_LINE_SIZE;
          fprintf( stderr, "WARNING: line %d cutted for processing (max_line_size=%d)\n", read_lines_num, MAX_TEXT_LINE_SIZE );
@@ -979,7 +982,7 @@ void  parse_input_assembly_file( char * filename, PSYM_TABLES  p_sym_tables )
   if (verbose) printf( "Read lines: %d\n", read_lines_num );
 
   if (debug_parsing) {
-    for(i=0;i<read_lines_num;i++) printf( "orig_text: %s\n", parsed_lines_array[i].orig_text_line );
+    for(i=0;i<read_lines_num;i=parsed_lines_array[i].next_line) printf( "line=%d, orig_text: %s\n", i, parsed_lines_array[i].orig_text_line );
   }
 
   /* Skip full comments */
@@ -1377,7 +1380,7 @@ void  parse_input_assembly_file( char * filename, PSYM_TABLES  p_sym_tables )
   /* References resolving */
   if (verbose) printf( "References resolving (pass 2).\n" );
 
-  for(i=0;i<read_lines_num;i++) {
+  for(i=0;i<read_lines_num;i=parsed_lines_array[i].next_line) {
       if (parsed_lines_array[i].skip_this_line) continue;
 
       /* process data lines */
@@ -1508,7 +1511,7 @@ void  produce_output_object_file( char * filename )
   fp = fopen( filename, "wt" );
   if (fp == NULL) return;
 
-  for(i=0;i<read_lines_num;i++) {
+  for(i=0;i<read_lines_num;i=parsed_lines_array[i].next_line) {
       if (parsed_lines_array[i].skip_this_line) {
           fprintf( fp, "%s\n", parsed_lines_array[i].orig_text_line );
           continue;
@@ -1629,7 +1632,7 @@ void  produce_output_listing_file( char * filename )
   fprintf( fp, "%s\n", subheader );
   fprintf( fp, "\n" );
 
-  for(i=0;i<read_lines_num;i++) {
+  for(i=0;i<read_lines_num;i=parsed_lines_array[i].next_line) {
       if (parsed_lines_array[i].do_list == 0) continue;
 
       line_num = parsed_lines_array[i].line_num;

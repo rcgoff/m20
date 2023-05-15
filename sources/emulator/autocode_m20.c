@@ -907,39 +907,23 @@ int  check_addr_mod( char * addr )
   return result;
 }
 
-
-
 /*
- *  Parse symbolic assembly file
+ *  Read symbolic assembly file into memory and draft processing
  */
 
-void  parse_input_assembly_file( char * filename, PSYM_TABLES  p_sym_tables )
+void  read_input_assembly_file( char * filename )
 {
   FILE *  fp = NULL;
   size_t  slen;
   int     line_idx;
-  char *  p_cur_sym;
   char *  s;
-  //char *  s1, * s2;
   char    ch;
-  int     do_list = 1;
-  int     cur_ch;
-  int     in_word;
-  int     i,j, k, n, m, t;
-  int     res;
-  int     opcode;
-  int     new_addr, this_addr;
-  //int     addr_resolve_done;
-  size_t  res1, res2;
-  int     cur_location_counter;
-  t_value m_code;
-  //t_value t_code;
+  int     i;
   char    temp_buf[2048];
-  char    work_buf[2048];
-  char    word[128];
+
+
 
   if (filename == NULL) return;
-  if (p_sym_tables == NULL) return;
 
   if (verbose) printf( "Parsing filename: %s\n", filename );
 
@@ -1023,6 +1007,41 @@ void  parse_input_assembly_file( char * filename, PSYM_TABLES  p_sym_tables )
       if (slen == 0) parsed_lines_array[i].skip_this_line = 1;
    }
 
+
+}
+
+
+
+
+
+/*
+ *  Parse symbolic assembly file
+ */
+
+void  parse_input_assembly_file( PSYM_TABLES  p_sym_tables )
+{
+  size_t  slen;
+  char *  p_cur_sym;
+  char *  s;
+  //char *  s1, * s2;
+  char    ch;
+  int     do_list = 1;
+  int     cur_ch;
+  int     in_word;
+  int     i,j, k, n, m, t;
+  int     res;
+  int     opcode;
+  int     new_addr, this_addr;
+  //int     addr_resolve_done;
+  size_t  res1, res2;
+  int     cur_location_counter;
+  t_value m_code;
+  //t_value t_code;
+  char    temp_buf[2048];
+  char    work_buf[2048];
+  char    word[128];
+
+  if (p_sym_tables == NULL) return;
 
 
   /* Lexical scanning */
@@ -1896,8 +1915,8 @@ int main( int argc, char ** argv )
   }
 
 
-
-  parse_input_assembly_file( in_file, p_cur_sym_tables );
+  read_input_assembly_file( in_file );
+  parse_input_assembly_file( p_cur_sym_tables );
   produce_output_object_file( out_file );
   if (list_file != NULL) produce_output_listing_file( list_file );
 

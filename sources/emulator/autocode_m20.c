@@ -911,7 +911,7 @@ int  check_addr_mod( char * addr )
  *  Read symbolic assembly file into memory and draft processing
  */
 
-void  read_input_assembly_file( char * filename )
+void  read_input_assembly_file( char * filename, int start_pos )
 {
   FILE *  fp = NULL;
   size_t  slen;
@@ -940,8 +940,8 @@ void  read_input_assembly_file( char * filename )
        s = strchr(big_text_buf,'\n');
        if (s != NULL) *s = '\0';
 
-       if (read_lines_num > MAX_PARSED_LINES) {
-         fprintf( stderr, "ERROR: max. parsed lines limit reached (%d,%d).\n", read_lines_num, MAX_PARSED_LINES );
+       if (read_lines_num - start_pos > MAX_PARSED_LINES) {
+         fprintf( stderr, "ERROR: max. parsed lines limit reached (%d,%d).\n", read_lines_num - start_pos, MAX_PARSED_LINES );
          return;
        }
 
@@ -950,7 +950,7 @@ void  read_input_assembly_file( char * filename )
 
        parsed_lines_array[line_idx].line_num = read_lines_num;
        parsed_lines_array[line_idx].next_line = INT_MAX;
-       if (line_idx != 0) parsed_lines_array[line_idx - 1].next_line = line_idx;
+       if (line_idx != start_pos) parsed_lines_array[line_idx - 1].next_line = line_idx;
        if (slen > MAX_TEXT_LINE_SIZE) {
          slen = MAX_TEXT_LINE_SIZE;
          fprintf( stderr, "WARNING: line %d cutted for processing (max_line_size=%d)\n", read_lines_num, MAX_TEXT_LINE_SIZE );
@@ -963,14 +963,14 @@ void  read_input_assembly_file( char * filename )
 
   fclose(fp);
 
-  if (verbose) printf( "Read lines: %d\n", read_lines_num );
+  if (verbose) printf( "Read lines: %d\n", read_lines_num - start_pos );
 
   if (debug_parsing) {
-    for(i=0;i<read_lines_num;i=parsed_lines_array[i].next_line) printf( "line=%d, orig_text: %s\n", i, parsed_lines_array[i].orig_text_line );
+    for(i=start_pos;i<read_lines_num;i=parsed_lines_array[i].next_line) printf( "line=%d, orig_text: %s\n", i, parsed_lines_array[i].orig_text_line );
   }
 
   /* Skip full comments */
-   for(i=0;i<read_lines_num;i++) {
+   for(i=start_pos;i<read_lines_num;i++) {
       if (parsed_lines_array[i].skip_this_line) continue;
       memset( temp_buf, 0, sizeof(temp_buf) );
       strncpy( temp_buf, parsed_lines_array[i].orig_text_line, sizeof(temp_buf)-1 );
@@ -983,7 +983,7 @@ void  read_input_assembly_file( char * filename )
    }
 
   /* Remove comments */
-   for(i=0;i<read_lines_num;i++) {
+   for(i=start_pos;i<read_lines_num;i++) {
        if (parsed_lines_array[i].skip_this_line == 0) {
          memset( temp_buf, 0, sizeof(temp_buf) );
          strncpy( temp_buf, parsed_lines_array[i].orig_text_line, sizeof(temp_buf)-1 );
@@ -997,11 +997,11 @@ void  read_input_assembly_file( char * filename )
    }
 
   if (debug_parsing) {
-    for(i=0;i<read_lines_num;i++) printf( "clean_text: %s\n", parsed_lines_array[i].cleaned_text_line );
+    for(i=start_pos;i<read_lines_num;i++) printf( "clean_text: %s\n", parsed_lines_array[i].cleaned_text_line );
   }
 
   /* Skip empty lines */
-   for(i=0;i<read_lines_num;i++) {
+   for(i=start_pos;i<read_lines_num;i++) {
      if (parsed_lines_array[i].skip_this_line) continue;
       slen = strlen(parsed_lines_array[i].cleaned_text_line);
       if (slen == 0) parsed_lines_array[i].skip_this_line = 1;
@@ -1915,7 +1915,7 @@ int main( int argc, char ** argv )
   }
 
 
-  read_input_assembly_file( in_file );
+  read_input_assembly_file( in_file, 0);
   parse_input_assembly_file( p_cur_sym_tables );
   produce_output_object_file( out_file );
   if (list_file != NULL) produce_output_listing_file( list_file );

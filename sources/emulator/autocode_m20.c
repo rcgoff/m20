@@ -915,11 +915,17 @@ void  read_input_assembly_file( char * filename, int start_pos )
 {
   FILE *  fp = NULL;
   size_t  slen;
+  char *  p_cur_sym;
   int     line_idx;
   char *  s;
   char    ch;
-  int     i;
+  int     cur_ch;
+  int     in_word;
+  int     i,j,k;
+  int     res;
   char    temp_buf[2048];
+  char    work_buf[2048];
+  char    word[128];
 
 
 
@@ -1007,46 +1013,9 @@ void  read_input_assembly_file( char * filename, int start_pos )
       if (slen == 0) parsed_lines_array[i].skip_this_line = 1;
    }
 
-
-}
-
-
-
-
-
-/*
- *  Parse symbolic assembly file
- */
-
-void  parse_input_assembly_file( PSYM_TABLES  p_sym_tables )
-{
-  size_t  slen;
-  char *  p_cur_sym;
-  char *  s;
-  //char *  s1, * s2;
-  char    ch;
-  int     do_list = 1;
-  int     cur_ch;
-  int     in_word;
-  int     i,j, k, n, m, t;
-  int     res;
-  int     opcode;
-  int     new_addr, this_addr;
-  //int     addr_resolve_done;
-  size_t  res1, res2;
-  int     cur_location_counter;
-  t_value m_code;
-  //t_value t_code;
-  char    temp_buf[2048];
-  char    work_buf[2048];
-  char    word[128];
-
-  if (p_sym_tables == NULL) return;
-
-
   /* Lexical scanning */
   if (verbose) printf( "Lexical scanning.\n" );
-  for(i=0;i<read_lines_num;i++) {
+  for(i=start_pos;i<read_lines_num;i++) {
      if (parsed_lines_array[i].skip_this_line) continue;
      /* make a work buffer  */
      memset( work_buf, 0, sizeof(work_buf) );
@@ -1107,6 +1076,39 @@ void  parse_input_assembly_file( PSYM_TABLES  p_sym_tables )
       printf( "\n" );
     }
   }
+
+
+}
+
+
+
+
+
+/*
+ *  Parse symbolic assembly file
+ */
+
+void  parse_input_assembly_file( PSYM_TABLES  p_sym_tables )
+{
+  size_t  slen;
+  char *  s;
+  //char *  s1, * s2;
+  char    ch;
+  int     do_list = 1;
+  int     i,j, k, n, m, t;
+  int     res;
+  int     opcode;
+  int     new_addr, this_addr;
+  //int     addr_resolve_done;
+  size_t  res1, res2;
+  int     cur_location_counter;
+  t_value m_code;
+  //t_value t_code;
+  char    temp_buf[2048];
+
+  if (p_sym_tables == NULL) return;
+
+
 
 
   /* Syntax parsing */

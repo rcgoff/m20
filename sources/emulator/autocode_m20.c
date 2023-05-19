@@ -103,7 +103,8 @@ enum name_directives {
     MEMORY_DIRECTIVE     = 7,
     AUTHOR_DIRECTIVE     = 8,
     LIST_DIRECTIVE       = 9,
-    NOLIST_DIRECTIVE     = 10
+    NOLIST_DIRECTIVE     = 10,
+    INCLUDE_DIRECTIVE    = 11
 };
 
 typedef  struct  pseudo_operation {
@@ -1092,7 +1093,7 @@ void  parse_input_assembly_file( PSYM_TABLES  p_sym_tables )
 {
   size_t  slen;
   char *  s;
-  //char *  s1, * s2;
+  char *  s1, * s2;
   char    ch;
   int     do_list = 1;
   int     i,j, k, n, m, t;
@@ -1105,6 +1106,8 @@ void  parse_input_assembly_file( PSYM_TABLES  p_sym_tables )
   t_value m_code;
   //t_value t_code;
   char    temp_buf[2048];
+  char    incl_filename[MAX_LEXICAL_WORD_SIZE+1];
+
 
   if (p_sym_tables == NULL) return;
 
@@ -1115,7 +1118,7 @@ void  parse_input_assembly_file( PSYM_TABLES  p_sym_tables )
   if (verbose) printf( "Syntax parsing (pass 1).\n" );
   //cur_location_counter = 0;
   cur_location_counter = 1;
-  for(i=0;i<read_lines_num;i++) {
+  for(i=0;i<read_lines_num;i=parsed_lines_array[i].next_line) {
 
       parsed_lines_array[i].do_list = do_list;
 
@@ -1303,9 +1306,35 @@ void  parse_input_assembly_file( PSYM_TABLES  p_sym_tables )
 
               }
 
+              if (p_sym_tables->pseudo_op_table[j].pseudo_op_idx == INCLUDE_DIRECTIVE) {
+                n=k+1;
+                if (parsed_lines_array[i].lexical_word_array[n].lex_word_num > 0) {
+                  /* Remove quotation marks, if needed */
+                  s1 = strchr(parsed_lines_array[i].lexical_word_array[n].lex_word_value,'"');
+                  if (s1 != NULL) {
+                    s2 = strchr(s1+1,'"');
+                    if (s2 != NULL) {
+                      s1++; s2--;
+                      slen = s2 - s1 + 1;
+                      strncpy( incl_filename , s1, slen );
+                    }
+                  }
+                  else {
+                    slen = strlen(parsed_lines_array[i].lexical_word_array[k].lex_word_value);
+                    strncpy( incl_filename, parsed_lines_array[i].lexical_word_array[n].lex_word_value, slen-1);
+                  }
+                  /* Append included file to the end of array, update read_lines_num*/
+                  parsed_lines_array[i].next_line=read_lines_num;
+                  read_input_assembly_file( incl_filename, read_lines_num);
+                  parsed_lines_array[read_lines_num-1].next_line = i+1;
+                  goto done1;
+                }
+                fprintf( stderr, "ERROR: missing value per %s directive in line %d.\n",
+                             p_sym_tables->pseudo_op_table[j].pseudo_op_name, parsed_lines_array[i].line_num );
+                return;
+              }
           } 
      } /*for*/
-
 
      /* detect symbolic code operation */
      if (parsed_lines_array[i].lexical_word_array[k].lex_word_num > 0) {

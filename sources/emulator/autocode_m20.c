@@ -1107,6 +1107,7 @@ void  parse_input_assembly_file( PSYM_TABLES  p_sym_tables )
   //t_value t_code;
   char    temp_buf[2048];
   char    incl_filename[MAX_LEXICAL_WORD_SIZE+1];
+  int     bckp_nextline;
 
 
   if (p_sym_tables == NULL) return;
@@ -1324,9 +1325,10 @@ void  parse_input_assembly_file( PSYM_TABLES  p_sym_tables )
                     strncpy( incl_filename, parsed_lines_array[i].lexical_word_array[n].lex_word_value, slen-1);
                   }
                   /* Append included file to the end of array, update read_lines_num*/
+                  bckp_nextline = parsed_lines_array[i].next_line;
                   parsed_lines_array[i].next_line=read_lines_num;
                   read_input_assembly_file( incl_filename, read_lines_num);
-                  parsed_lines_array[read_lines_num-1].next_line = i+1;
+                  parsed_lines_array[read_lines_num-1].next_line = bckp_nextline;
                   goto done1;
                 }
                 fprintf( stderr, "ERROR: missing value per %s directive in line %d.\n",

@@ -374,6 +374,28 @@ strcasestr(s, find)
 #endif
 
 
+/*
+ *  Return string without quotation marks
+ */
+
+char* str_without_quotes (char* out_str, const char* src_str, size_t maxsize) {
+  char *  s1, * s2;
+  size_t  slen;
+
+  s1 = strchr(src_str,'"');
+  if (s1 != NULL) {
+    s2 = strchr(s1+1,'"');
+    if (s2 != NULL) {
+      s1++; s2--;
+      slen = s2 - s1 + 1;
+      if ((maxsize !=0) && (slen > maxsize-1)) slen = maxsize;
+      strncpy( out_str, s1, slen );
+    }
+    else return NULL;
+  }
+  else return NULL;
+return s2;
+}
 
 
 
@@ -386,7 +408,7 @@ void  process_tables_file( char * filename, int encoding, PSYM_TABLES  p_sym_tab
 
   FILE *  fp = NULL;
   char *  s;
-  char *  s1, * s2;
+  char *  s2;
   char    ch;
   size_t  slen, slen2;
   int     section_num = 0;
@@ -448,23 +470,15 @@ void  process_tables_file( char * filename, int encoding, PSYM_TABLES  p_sym_tab
        if (section_num == 1) {
          s = big_text_buf;
          msg_idx = atoi(s);
-         s1 = strchr(s,'"');
-         if (s1 != NULL) {
-           s2 = strchr(s1+1,'"');
-           if (s2 != NULL) {
-             s1++; s2--;
-             slen = s2 - s1 + 1;
-             if (slen > (sizeof(temp_buf)-1)) slen = sizeof(temp_buf)-1;
-             strncpy( temp_buf, s1, slen );
-             //printf( "slen=%d, msg_idx=%d, msg_text='%s'\n", slen, msg_idx, temp_buf );
-             if (messages_num < MAX_MESSAGES_NUM ) {
-               slen = strlen(temp_buf);
-               if (slen > MAX_MESSAGE_SIZE) slen = MAX_MESSAGE_SIZE;
-               p_sym_tables->messages_table[messages_num].msg_idx = msg_idx;
-               strncpy( p_sym_tables->messages_table[messages_num].msg_text, temp_buf, slen );
-               messages_num++;
-               continue;
-             }
+         if (str_without_quotes(temp_buf, s, sizeof(temp_buf)) != NULL){
+           if (debug_parsing) printf( "msg_idx=%d, msg_text='%s'\n", msg_idx, temp_buf );
+           if (messages_num < MAX_MESSAGES_NUM ) {
+             slen = strlen(temp_buf);
+             if (slen > MAX_MESSAGE_SIZE) slen = MAX_MESSAGE_SIZE;
+             p_sym_tables->messages_table[messages_num].msg_idx = msg_idx;
+             strncpy( p_sym_tables->messages_table[messages_num].msg_text, temp_buf, slen );
+             messages_num++;
+             continue;
            }
          }
          fprintf( stderr, "ERROR: wrong format per line %d: '%s'\n", line_num, big_text_buf );
@@ -475,24 +489,16 @@ void  process_tables_file( char * filename, int encoding, PSYM_TABLES  p_sym_tab
        if (section_num == 2) {
          s = big_text_buf;
          msg_idx = atoi(s);
-         s1 = strchr(s,'"');
-         if (s1 != NULL) {
-           s2 = strchr(s1+1,'"');
-           if (s2 != NULL) {
-             s1++; s2--;
-             slen = s2 - s1 + 1;
-             if (slen > (sizeof(temp_buf)-1)) slen = sizeof(temp_buf)-1;
-             strncpy( temp_buf, s1, slen );
-             //printf( "slen=%d, msg_idx=%d, msg_text='%s'\n", slen, msg_idx, temp_buf );
-             if (ps_ops_num < MAX_PSEUDO_OPS_NUM) {
-               slen = strlen(temp_buf);
-               if (slen > MAX_PSEUDO_OP_SIZE) slen = MAX_PSEUDO_OP_SIZE;
-               p_sym_tables->pseudo_op_table[ps_ops_num].pseudo_op_idx = msg_idx;
-               strncpy( p_sym_tables->pseudo_op_table[ps_ops_num].pseudo_op_name, temp_buf, slen );
-               ps_ops_num++;
-               continue;
+         if (str_without_quotes(temp_buf, s, sizeof(temp_buf)) != NULL){
+           if (debug_parsing) printf( "msg_idx=%d, msg_text='%s'\n", msg_idx, temp_buf );
+           if (ps_ops_num < MAX_PSEUDO_OPS_NUM) {
+             slen = strlen(temp_buf);
+             if (slen > MAX_PSEUDO_OP_SIZE) slen = MAX_PSEUDO_OP_SIZE;
+             p_sym_tables->pseudo_op_table[ps_ops_num].pseudo_op_idx = msg_idx;
+             strncpy( p_sym_tables->pseudo_op_table[ps_ops_num].pseudo_op_name, temp_buf, slen );
+             ps_ops_num++;
+             continue;
              }
-           }
          }
          fprintf( stderr, "ERROR: wrong format per line %d: '%s'\n", line_num, big_text_buf );
          return;
@@ -502,35 +508,20 @@ void  process_tables_file( char * filename, int encoding, PSYM_TABLES  p_sym_tab
        if (section_num == 3) {
          s = big_text_buf;
          opcode = strtol(s,NULL,8);
-         s1 = strchr(s,'"');
-         if (s1 != NULL) {
-           s2 = strchr(s1+1,'"');
-           if (s2 != NULL) {
-             s1++;
-             slen = s2 - s1;
-             if (slen > (sizeof(temp_buf)-1)) slen = sizeof(temp_buf)-1;
-             strncpy( temp_buf, s1, slen );
-             s1 = strchr( s2+1, '"');
-             if (s1 != NULL) {
-               s2 = strchr(s1+1, '"');
-               if (s2 != NULL) {
-                 s1++;
-                 slen = s2 - s1;
-                 if (slen > (sizeof(temp_buf_2)-1)) slen = sizeof(temp_buf_2)-1;
-                 strncpy( temp_buf_2, s1, slen );
-                 //printf( "op=%02o, short='%s' long='%s'\n", opcode, temp_buf, temp_buf_2 );
-                 if (ops_num < MAX_INSTRUCTIONS_NUM) {
-                   slen = strlen(temp_buf);
-                   if (slen > MAX_SHORT_SYM_OP_SIZE) slen = MAX_SHORT_SYM_OP_SIZE;
-                   slen2 =strlen(temp_buf_2);
-                   if (slen2 > MAX_LONG_SYM_OP_SIZE) slen2 = MAX_LONG_SYM_OP_SIZE;
-                   p_sym_tables->sym_op_instr_table[ops_num].op_code = opcode;
-                   strncpy( p_sym_tables->sym_op_instr_table[ops_num].short_op_name, temp_buf, slen );
-                   strncpy( p_sym_tables->sym_op_instr_table[ops_num].long_op_name, temp_buf_2, slen2 );
-                   ops_num++;
-                   continue;
-                 }
-               }
+         s2 = str_without_quotes(temp_buf, s, sizeof(temp_buf));
+         if (s2 != NULL){
+           if (str_without_quotes(temp_buf_2, s2+2, sizeof(temp_buf_2)) != NULL){
+             if (debug_parsing) printf( "op=%02o, short='%s' long='%s'\n", opcode, temp_buf, temp_buf_2 );
+             if (ops_num < MAX_INSTRUCTIONS_NUM) {
+               slen = strlen(temp_buf);
+               if (slen > MAX_SHORT_SYM_OP_SIZE) slen = MAX_SHORT_SYM_OP_SIZE;
+               slen2 =strlen(temp_buf_2);
+               if (slen2 > MAX_LONG_SYM_OP_SIZE) slen2 = MAX_LONG_SYM_OP_SIZE;
+               p_sym_tables->sym_op_instr_table[ops_num].op_code = opcode;
+               strncpy( p_sym_tables->sym_op_instr_table[ops_num].short_op_name, temp_buf, slen );
+               strncpy( p_sym_tables->sym_op_instr_table[ops_num].long_op_name, temp_buf_2, slen2 );
+               ops_num++;
+               continue;
              }
            }
          }
@@ -1310,20 +1301,13 @@ void  parse_input_assembly_file( PSYM_TABLES  p_sym_tables )
               if (p_sym_tables->pseudo_op_table[j].pseudo_op_idx == INCLUDE_DIRECTIVE) {
                 n=k+1;
                 if (parsed_lines_array[i].lexical_word_array[n].lex_word_num > 0) {
+                  if (debug_parsing) fprintf(stdout,"filename_before_quotes_del= %s\n", parsed_lines_array[i].lexical_word_array[n].lex_word_value);
                   /* Remove quotation marks, if needed */
-                  s1 = strchr(parsed_lines_array[i].lexical_word_array[n].lex_word_value,'"');
-                  if (s1 != NULL) {
-                    s2 = strchr(s1+1,'"');
-                    if (s2 != NULL) {
-                      s1++; s2--;
-                      slen = s2 - s1 + 1;
-                      strncpy( incl_filename , s1, slen );
-                    }
-                  }
-                  else {
+                  if (str_without_quotes(incl_filename, parsed_lines_array[i].lexical_word_array[n].lex_word_value,0) == NULL){
                     slen = strlen(parsed_lines_array[i].lexical_word_array[k].lex_word_value);
                     strncpy( incl_filename, parsed_lines_array[i].lexical_word_array[n].lex_word_value, slen-1);
                   }
+                  if (debug_parsing) fprintf(stdout,"filename_after_qoutes_del= %s\n", incl_filename);
                   /* Append included file to the end of array, update read_lines_num*/
                   bckp_nextline = parsed_lines_array[i].next_line;
                   parsed_lines_array[i].next_line=read_lines_num;

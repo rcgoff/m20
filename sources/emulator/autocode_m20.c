@@ -146,6 +146,7 @@ typedef struct sym_tables {
 #define  MAX_LABEL_NAME_SIZE                 32
 #define  MAX_ADDRESS_NAME_SIZE               64
 #define  MAX_OPCODE_SYM_SIZE                 32
+#define  MAX_INCLUDED_FILES                  64
 
 typedef struct lexical_word {
    int   lex_word_num;
@@ -203,6 +204,10 @@ typedef struct symbolic_value {
   char     sym_name[MAX_SYM_VALUE_NAME_SIZE+1];
 } SYMBOLIC_VALUE, *PSYMBOLIC_VALUE;
 
+typedef  struct  filename_tab {
+  char  filename[MAX_LEXICAL_WORD_SIZE+1];
+} FILENAME_TAB, *PFILENAME_TAB;
+
 
 /* Local data */
 
@@ -249,6 +254,9 @@ ABSOLUTE_VALUE  abs_values_table[MAX_ABS_VALUES_NUM] = { 0 };
 
 int  sym_values_num = 0;
 SYMBOLIC_VALUE  sym_values_table[MAX_SYM_VALUES_NUM] = { 0 };
+
+int  incl_flnames_num = 0;
+FILENAME_TAB  incl_filename_table[MAX_INCLUDED_FILES];
 
 int   program_start_address = 1;
 
@@ -712,6 +720,30 @@ void  add_new_abs_to_abstab( char * name, t_value value )
         fprintf( stderr, "ERROR: absolute values table is fully occupied (%d,%d).\n", abs_values_num, MAX_ABS_VALUES_NUM );
         return;
     }
+}
+
+int  add_new_filename_to_include_list( char * name )
+{
+    int i;
+
+    if (name == NULL) return 0;
+
+    if (incl_flnames_num < MAX_INCLUDED_FILES) {
+        for( i=0; i<incl_flnames_num; i++ ) {
+          if (strcasecmp(name,incl_filename_table[i].filename) == 0) {
+            printf( "WARNING: duplicate included filename found, skipping (%s,%d: %s).\n", name,i,incl_filename_table[i].filename );
+            return 0;
+          }
+        }
+        i = incl_flnames_num;
+        strncpy( incl_filename_table[i].filename, name, MAX_LEXICAL_WORD_SIZE );
+        incl_flnames_num++;
+    }
+    else {
+        fprintf( stderr, "ERROR: included file names table is fully occupied (%d,%d).\n", incl_flnames_num, MAX_INCLUDED_FILES );
+        return 0;
+    }
+    return 1;
 }
 
 
@@ -1315,6 +1347,8 @@ void  parse_input_assembly_file( PSYM_TABLES  p_sym_tables )
                     strncpy( incl_filename, parsed_lines_array[i].lexical_word_array[n].lex_word_value, slen-1);
                   }
                   if (debug_parsing) fprintf(stdout,"filename_after_qoutes_del= %s\n", incl_filename);
+                  /* Check if file already had included */
+                  if ( !add_new_filename_to_include_list (incl_filename) ) goto done1;
                   /* Append included file to the end of array, update read_lines_num*/
                   bckp_nextline = parsed_lines_array[i].next_line;
                   parsed_lines_array[i].next_line=read_lines_num;
@@ -1940,6 +1974,7 @@ int main( int argc, char ** argv )
 
 
   read_input_assembly_file( in_file, 0);
+  add_new_filename_to_include_list(in_file);
   parse_input_assembly_file( p_cur_sym_tables );
   produce_output_object_file( out_file );
   if (list_file != NULL) produce_output_listing_file( list_file );

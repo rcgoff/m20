@@ -913,6 +913,7 @@ void  read_input_assembly_file( char * filename, int start_pos )
   char    ch;
   int     cur_ch;
   int     in_word;
+  int     in_quotes;
   int     i,j,k;
   int     res;
   char    temp_buf[2048];
@@ -1016,11 +1017,13 @@ void  read_input_assembly_file( char * filename, int start_pos )
      if (debug_parsing) printf( "work_buf (len=%d): %s\n", slen,work_buf );
      p_cur_sym = &work_buf[0];
      in_word = 0;
+     in_quotes = 0;
      j = 0; k = 0;
      word[0] = '0';
      while( slen-- ) {
        cur_ch = *p_cur_sym++;
        res = is_delim(cur_ch);
+       if (cur_ch == '"') in_quotes = !in_quotes;
        if (res) {
          if (!in_word) {
            memset( word, 0, sizeof(word) );
@@ -1034,14 +1037,18 @@ void  read_input_assembly_file( char * filename, int start_pos )
        }
        else {
          if (in_word) {
-           word[j] = '\0';
-           if (k < MAX_LEXICAL_WORD_NUM) {
-             strncpy( parsed_lines_array[i].lexical_word_array[k].lex_word_value,word,MAX_LEXICAL_WORD_SIZE);
-             parsed_lines_array[i].lexical_word_array[k].lex_word_num = k+1;
-             k++;
+           if (in_quotes)
+             word[j++] = cur_ch;
+           else {
+             word[j] = '\0';
+             if (k < MAX_LEXICAL_WORD_NUM) {
+               strncpy( parsed_lines_array[i].lexical_word_array[k].lex_word_value,word,MAX_LEXICAL_WORD_SIZE);
+               parsed_lines_array[i].lexical_word_array[k].lex_word_num = k+1;
+               k++;
+             }
+             //printf( "%s\n", word );
+             in_word = 0;
            }
-           //printf( "%s\n", word );
-           in_word = 0;
          }
        }
      }

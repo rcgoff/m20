@@ -394,10 +394,12 @@ char* str_without_quotes (char* out_str, const char* src_str, size_t maxsize) {
   if (s1 != NULL) {
     s2 = strchr(s1+1,'"');
     if (s2 != NULL) {
-      s1++; s2--;
-      slen = s2 - s1 + 1;
+      s1++;
+      slen = s2 - s1;
+      s2++;
       if ((maxsize !=0) && (slen > maxsize-1)) slen = maxsize;
       strncpy( out_str, s1, slen );
+      *(out_str+slen)='\0';
     }
     else return NULL;
   }
@@ -518,7 +520,7 @@ void  process_tables_file( char * filename, int encoding, PSYM_TABLES  p_sym_tab
          opcode = strtol(s,NULL,8);
          s2 = str_without_quotes(temp_buf, s, sizeof(temp_buf));
          if (s2 != NULL){
-           if (str_without_quotes(temp_buf_2, s2+2, sizeof(temp_buf_2)) != NULL){
+           if (str_without_quotes(temp_buf_2, s2, sizeof(temp_buf_2)) != NULL){
              if (debug_parsing) printf( "op=%02o, short='%s' long='%s'\n", opcode, temp_buf, temp_buf_2 );
              if (ops_num < MAX_INSTRUCTIONS_NUM) {
                slen = strlen(temp_buf);
@@ -1096,7 +1098,7 @@ void  read_input_assembly_file( char * filename, int start_pos )
   }
 
   if (debug_parsing) {
-    for(i=0;i<read_lines_num;i++) {
+    for(i=start_pos;i<read_lines_num;i++) {
       if (parsed_lines_array[i].skip_this_line) continue;
       printf( "lex_words: " );
       for(k=0;k<MAX_LEXICAL_WORD_NUM;k++) {
@@ -1346,7 +1348,7 @@ void  parse_input_assembly_file( PSYM_TABLES  p_sym_tables )
                     slen = strlen(parsed_lines_array[i].lexical_word_array[k].lex_word_value);
                     strncpy( incl_filename, parsed_lines_array[i].lexical_word_array[n].lex_word_value, slen-1);
                   }
-                  if (debug_parsing) fprintf(stdout,"filename_after_qoutes_del= %s\n", incl_filename);
+                  if (debug_parsing) fprintf(stdout,"filename_after_quotes_del= %s\n", incl_filename);
                   /* Check if file already had included */
                   if ( !add_new_filename_to_include_list (incl_filename) ) goto done1;
                   /* Append included file to the end of array, update read_lines_num*/

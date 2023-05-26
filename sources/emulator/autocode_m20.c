@@ -683,7 +683,11 @@ void  add_new_sym_to_symtab( char * name, int value )
     if (sym_values_num < MAX_SYM_VALUES_NUM) {
         for( i=0; i<sym_values_num; i++ ) {
           if (strcasecmp(name,sym_values_table[i].sym_name) == 0) {
-            fprintf( stderr, "ERROR: duplicate symbolic name found (%s,%d:%s).\n", name,i,sym_values_table[i].sym_name );
+            if (sym_values_table[i].sym_value == value) {
+              printf( "WARNING: duplicate symbolic name definition (%s,%d:%s).\n", name,i,sym_values_table[i].sym_name );
+            }
+            else
+              fprintf( stderr, "ERROR: symbolic name redefinition (%s: %d vs. %d: %s: %d).\n", name, value, i,sym_values_table[i].sym_name,sym_values_table[i].sym_value );
             return;
           }
         }
@@ -709,7 +713,11 @@ void  add_new_abs_to_abstab( char * name, t_value value )
     if (abs_values_num < MAX_ABS_VALUES_NUM) {
         for( i=0; i<abs_values_num; i++ ) {
           if (strcasecmp(name,abs_values_table[i].abs_name) == 0) {
-            fprintf( stderr, "ERROR: duplicate absolute value found (%s,%d:%s).\n", name,i,abs_values_table[i].abs_name );
+            if (abs_values_table[i].abs_value == value) {
+              printf( "WARNING: duplicate absolute value definition (%s,%d:%s).\n", name,i,abs_values_table[i].abs_name );
+            }
+            else
+              fprintf( stderr, "ERROR: absolute value redefinition (%s: %llo vs. %d: %s: %llo).\n", name, value, i,abs_values_table[i].abs_name,abs_values_table[i].abs_value );
             return;
           }
         }

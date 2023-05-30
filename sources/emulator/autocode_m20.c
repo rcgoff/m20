@@ -968,6 +968,19 @@ void  read_input_assembly_file( char * filename, int start_pos )
 
   if (verbose) printf( "Parsing filename: %s\n", filename );
 
+  /*Different encoding in included filename processing*/
+  if ((start_pos != 0) && (encoding_type > 1) && _WIN32 ) {
+    int z;
+    wchar_t  wide_filename[2*(MAX_LEXICAL_WORD_SIZE+1)]= {'\0'};
+    int codepages[6]= {1251};
+        codepages[2]=866;
+        codepages[3]=1251;
+        codepages[4]=20866;     //KOI8
+        codepages[5]=65001;     //UTF8
+    z=MultiByteToWideChar (codepages[encoding_type],0,filename,-1,wide_filename,2*(MAX_LEXICAL_WORD_SIZE+1));
+    z=WideCharToMultiByte (1251,0,wide_filename,-1,filename,MAX_LEXICAL_WORD_SIZE+1,NULL,NULL);
+    if (verbose) printf("Transcoded filename: %s \n",filename);
+  }
   fp = fopen( filename, "rt" );
   if (fp == NULL) return;
 

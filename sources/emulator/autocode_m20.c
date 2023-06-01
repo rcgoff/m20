@@ -14,6 +14,7 @@
  *  28-Feb-2015  DVS  Added sym_values into numeric values (data lines)
  *  26-Mar-2015  DVS  Minor changes
  *  01-May-2021  DVS  Fixed a bug with data line parsing (bug found by Leonid Yadrennikov).
+ *  01-Jun-2023  LOY  INCLUDE directive support (for Windows).
  *
  */
 
@@ -230,7 +231,7 @@ char  m20_rus_koi8r_tab_filename[]    = "autocode_m20_unix_koi8r.tab";
 char  m20_rus_utf8_tab_filename[]     = "autocode_m20_rus_utf8.tab";
 
 
-const char prog_ver[] = "1.0.0";
+const char prog_ver[] = "1.1.0";
 const char rcs_id[] = "$Id$";
 
 PSYM_TABLES  p_cur_sym_tables = NULL;
@@ -965,11 +966,12 @@ void  read_input_assembly_file( char * filename, int start_pos )
 
   if (verbose) printf( "Parsing filename: %s\n", filename );
 
+#if _WIN32
   /*Different encoding in included filename processing*/
-  if ((start_pos != 0) && (encoding_type > 1) && _WIN32 ) {
+  if ((start_pos != 0) && (encoding_type > 1) ) {
     int z;
     wchar_t  wide_filename[2*(MAX_LEXICAL_WORD_SIZE+1)]= {'\0'};
-    int codepages[6]= {1251};
+    int codepages[6]= {1251, 1251};
         codepages[2]=866;
         codepages[3]=1251;
         codepages[4]=20866;     //KOI8
@@ -978,6 +980,7 @@ void  read_input_assembly_file( char * filename, int start_pos )
     z=WideCharToMultiByte (1251,0,wide_filename,-1,filename,MAX_LEXICAL_WORD_SIZE+1,NULL,NULL);
     if (verbose) printf("Transcoded filename: %s \n",filename);
   }
+#endif
   fp = fopen( filename, "rt" );
   if (fp == NULL) return;
 

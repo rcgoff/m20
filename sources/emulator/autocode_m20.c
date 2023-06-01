@@ -204,10 +204,6 @@ typedef struct symbolic_value {
   char     sym_name[MAX_SYM_VALUE_NAME_SIZE+1];
 } SYMBOLIC_VALUE, *PSYMBOLIC_VALUE;
 
-typedef  struct  filename_tab {
-  char  filename[MAX_LEXICAL_WORD_SIZE+1];
-} FILENAME_TAB, *PFILENAME_TAB;
-
 
 /* Local data */
 
@@ -256,7 +252,7 @@ int  sym_values_num = 0;
 SYMBOLIC_VALUE  sym_values_table[MAX_SYM_VALUES_NUM] = { 0 };
 
 int  incl_flnames_num = 0;
-FILENAME_TAB  incl_filename_table[MAX_INCLUDED_FILES];
+char* incl_filename_table[MAX_INCLUDED_FILES] = { NULL };
 
 int   program_start_address = 1;
 
@@ -740,13 +736,14 @@ int  add_new_filename_to_include_list( char * name )
 
     if (incl_flnames_num < MAX_INCLUDED_FILES) {
         for( i=0; i<incl_flnames_num; i++ ) {
-          if (strcasecmp(name,incl_filename_table[i].filename) == 0) {
-            printf( "WARNING: duplicate included filename found, skipping (%s,%d: %s).\n", name,i,incl_filename_table[i].filename );
+          if ((incl_filename_table[i]!= NULL) && strcasecmp(name,incl_filename_table[i])  == 0) {
+            printf( "WARNING: duplicate included filename found, skipping (%s,%d: %s).\n", name,i,incl_filename_table[i] );
             return 0;
           }
         }
         i = incl_flnames_num;
-        strncpy( incl_filename_table[i].filename, name, MAX_LEXICAL_WORD_SIZE );
+        incl_filename_table[i] = (char*)malloc( strlen(name)+ 1 );
+        strncpy( incl_filename_table[i], name, strlen(name)+ 1 );
         incl_flnames_num++;
     }
     else {

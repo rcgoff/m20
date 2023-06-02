@@ -213,7 +213,7 @@ extern  int        opterr;
 extern  char     * optarg;
 
 char         * out_file = NULL;
-char         * in_file = NULL;
+unsigned char * in_file = NULL;
 char         * list_file = NULL;
 int           verbose = 0;
 int           quiet = 0;
@@ -729,7 +729,7 @@ void  add_new_abs_to_abstab( char * name, t_value value )
     }
 }
 
-int  add_new_filename_to_include_list( char * name )
+int  add_new_filename_to_include_list( unsigned char * name )
 {
     int i;
 
@@ -943,7 +943,7 @@ int  check_addr_mod( char * addr )
  *  Read symbolic assembly file into memory and draft processing
  */
 
-void  read_input_assembly_file( char * filename, int start_pos )
+void  read_input_assembly_file( unsigned char * filename, int start_pos )
 {
   FILE *  fp = NULL;
   size_t  slen;
@@ -982,7 +982,10 @@ void  read_input_assembly_file( char * filename, int start_pos )
   }
 #endif
   fp = fopen( filename, "rt" );
-  if (fp == NULL) return;
+  if (fp == NULL) {
+    fprintf(stderr, "ERROR reading file %s \n", filename);
+    return;
+  }
 
   memset( big_text_buf, 0, sizeof(big_text_buf) );
 
@@ -1146,7 +1149,6 @@ void  parse_input_assembly_file( PSYM_TABLES  p_sym_tables )
 {
   size_t  slen;
   char *  s;
-  char *  s1, * s2;
   char    ch;
   int     do_list = 1;
   int     i,j, k, n, m, t;
@@ -1159,7 +1161,7 @@ void  parse_input_assembly_file( PSYM_TABLES  p_sym_tables )
   t_value m_code;
   //t_value t_code;
   char    temp_buf[2048];
-  char    incl_filename[MAX_LEXICAL_WORD_SIZE+1];
+  unsigned char    incl_filename[MAX_LEXICAL_WORD_SIZE+1];
   int     bckp_nextline;
 
 
@@ -1972,8 +1974,9 @@ int main( int argc, char ** argv )
                if (!disable_setlocale_call) {
                  //setlocale(LC_ALL, "en_US.UTF-8");
                  //setlocale(LC_ALL, "ru_RU.UTF-8");
-                 setlocale(LC_ALL, "Russian_Russia.65001");
+                 //setlocale(LC_ALL, "Russian_Russia.65001");
                  //setlocale(LC_ALL, "Russian");
+                 SetConsoleOutputCP(65001);              /*using setlocale, we get an error reading included file w/transcoded name */
                }
 #endif
                p_cur_sym_tables = &sym_table_rus_utf8;

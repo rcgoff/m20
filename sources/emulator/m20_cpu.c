@@ -90,6 +90,7 @@
  *                    Fixed MOSU_MODE_II handling in mosu_store
  *  06-Jun-2022  LOY  Write to RA by writing to 7776 from SIMH file (cpu_deposit);
  *                    FA fix (modifiers use in the 2nd word)
+ *  15-Jun-2023  LOY  Ability to disable B-61 trace.
  */
 
 #include "m20_defs.h"
@@ -187,6 +188,7 @@ int      debug_dump_regs = 0;
 int      debug_dump_mem = 0;
 int      debug_dump_modern_mem = 0;
 int      disable_is2_trace = 0;
+int      disable_b61_trace = 0;
 int      arithmetic_op_debug = 0;
 int      print_sys_stat = 1;
 int      memory_45_checking = 1;
@@ -279,6 +281,7 @@ REG cpu_reg[] = {
         { DRDATA (DEBUG_DUMP_MODERM_MEM, debug_dump_modern_mem,  8), PV_LEFT },
         { DRDATA (ENABLE_M20_PRINT_ASCII_TEXT, enable_m20_print_ascii_text, 8), PV_LEFT },
         { DRDATA (DISABLE_IS2_TRACE, disable_is2_trace, 8), PV_LEFT },
+        { DRDATA (DISABLE_B61_TRACE, disable_b61_trace, 8), PV_LEFT },
         { DRDATA (MEMORY_45_CHECKING, memory_45_checking, 8), PV_LEFT },
         { DRDATA (ENABLE_OPCODE_040_HACK, enable_opcode_040_hack, 8), PV_LEFT },
         { DRDATA (ARITHMETIC_OP_DEBUG, arithmetic_op_debug, 8), PV_LEFT },
@@ -517,6 +520,9 @@ t_value *pm1, *pm2, *pm3, *pt_rr;
 	    if (disable_is2_trace) {
 	      if ((regKRA >= 07200) && (regKRA <= 07767)) goto trace_before_done;
 	    }
+	    if (disable_b61_trace) {
+	      if ((regKRA >= 00200) && (regKRA <= 00677)) goto trace_before_done;
+	    }
 	    addr_tags = regRK >> BITS_42 & MAX_ADDR_TAG_VALUE;
 	    a1 = regRK >> BITS_24 & MAX_ADDR_VALUE;
 	    a2 = regRK >> BITS_12 & MAX_ADDR_VALUE;
@@ -563,6 +569,9 @@ if (sim_deb && cpu_dev.dctrl) {
   char c1,c2,c3;
 	    if (disable_is2_trace) {
 	      if ((regKRA >= 07200) && (regKRA <= 07767)) goto trace_after_done;
+	    }
+	    if (disable_b61_trace) {
+	      if ((regKRA >= 00200) && (regKRA <= 00677)) goto trace_after_done;
 	    }
 	           if (debug_dump_regs) {
 	             c1='-'; c2='-'; c3='-';

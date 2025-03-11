@@ -31,6 +31,7 @@
  *  07-Dec-2014  DVS  Added decimal numbers input
  *  21-Dec-2014  DVS  Added opcode and modifiers for cpu trace output
  *  20-Jul-2021  LOY  Updated some definitions for new SIMH version (CONST)
+ *  11-Mar-2025  LOY  Add some more const in declarations, as in SIMH declarations
  *
  */
 
@@ -501,7 +502,7 @@ t_stat fprint_sym (FILE *of, t_addr addr, t_value *val,
 
 char *m20_parse_offset (char *cptr, int *offset)
 {
-    char *tptr, gbuf[CBUFSIZE];
+    const char *tptr, gbuf[CBUFSIZE];
 
     cptr = get_glyph (cptr, gbuf, 0);	/* get address */
     //*offset = strtotv (gbuf, &tptr, 8);

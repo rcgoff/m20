@@ -28,6 +28,7 @@
  *  06-Mar-2015  DVS  Added drum read/write data dump debugging option
  *  08-Mar-2015  DVS  Added more checksum control logic
  *  13-May-2023  LOY  Make variables for external devices external itself
+ *  11-Mar-2025  LOY  Add some const in declarations, as in SIMH declarations
  *
  */
 
@@ -43,13 +44,13 @@ extern int ext_io_op;			/* УЧ - условное число */
 extern int ext_io_dev_zone_addr;	/* А_МЗУ - начальный адрес на барабане/ленте/буфере_печ. */
 extern int ext_io_ram_start;		/* Н_МОЗУ - начальный адрес памяти */
 extern int ext_io_ram_end;		/* К_МОЗУ - конечный адрес памяти */
-extern int ext_io_ram_jump;		/* П_МОЗУ - адрес памяти передачи упрваления если нет совпадения кс */
-extern int ext_io_ram_chksum;		/* КС_МОЗУ - адрес памяти для запис КС */
+extern int ext_io_ram_jump;		/* П_МОЗУ - адрес памяти передачи управления если нет совпадения КС */
+extern int ext_io_ram_chksum;		/* КС_МОЗУ - адрес памяти для записи КС */
 
 
 t_stat drum_svc (UNIT *uptr);
 t_stat drum_reset (DEVICE *dptr);
-t_stat drum_attach (UNIT *uptr, char *cptr);
+t_stat drum_attach (UNIT *uptr, const char *cptr);
 t_stat drum_detach (UNIT *uptr);
 
 static int drum_map_check = 1;
@@ -176,7 +177,7 @@ t_stat drum_reset (DEVICE *dptr)
 /*
  *  Device attach routine
  */
-t_stat drum_attach (UNIT *uptr, char *cptr)
+t_stat drum_attach (UNIT *uptr, const char *cptr)
 {
     t_stat s;
 

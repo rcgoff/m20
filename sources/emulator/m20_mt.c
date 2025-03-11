@@ -22,6 +22,7 @@
  *  08-Mar-2015  DVS  Added more checksum control logic
  *                    Added tape read/write data dump debugging option
  *  13-May-2023  LOY  Make variables for external devices external itself
+ *  11-Mar-2025  LOY  Add some const in declarations, as in SIMH declarations
  *
  */
 
@@ -44,7 +45,7 @@ extern int ext_io_ram_chksum;		/* КС_МОЗУ - адрес памяти для
 
 t_stat mt_svc (UNIT *uptr);
 t_stat mt_reset (DEVICE *dptr);
-t_stat mt_attach (UNIT *uptr, char *cptr);
+t_stat mt_attach (UNIT *uptr, const char *cptr);
 t_stat mt_detach (UNIT *uptr);
 
 static int tape_auto_skip_zero_address = 1;
@@ -154,7 +155,7 @@ t_stat mt_reset (DEVICE *dptr)
 /*
  *  Device attach routine
  */
-t_stat mt_attach (UNIT *uptr, char *cptr)
+t_stat mt_attach (UNIT *uptr, const char *cptr)
 {
     t_stat s;
 

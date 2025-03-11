@@ -18,6 +18,7 @@
  *  23-Nov-2014  DVS  Added bcd print (type 4,5) for decimal print
  *  05-Dec-2014  DVS  Minor fixes
  *  27-Dec-2014  DVS  Added +,- bcd-codes according [1973 Lavrov]
+ *  11-Mar-2025  LOY  Add some const in declarations, as in SIMH declarations
  *
  */
 
@@ -52,7 +53,7 @@ extern double m20_to_ieee (t_value word);
 
 /* functions */
 t_stat lpt_reset (DEVICE *dptr);
-t_stat lpt_attach (UNIT *uptr, char *cptr);
+t_stat lpt_attach (UNIT *uptr, const char *cptr);
 t_stat lpt_detach (UNIT *uptr);
 
 
@@ -135,7 +136,7 @@ t_stat lpt_reset (DEVICE *dptr)
 
 /* Attach routine */
 
-t_stat lpt_attach (UNIT *uptr, char *cptr)
+t_stat lpt_attach (UNIT *uptr, const char *cptr)
 {
     if (sim_deb && lpt_dev.dctrl) fprintf (sim_deb, "lpt: lpt_attach(..)\n");
 

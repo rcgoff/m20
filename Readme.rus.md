@@ -10,30 +10,35 @@
 
 ## Сборка
 
-### Linux
-
-Перейти в папку с исходниками:
-
-```shell
-cd sources/emulator
-```
-
-Собрать исполняемые файлы:
-
-```shell
-make -f makefile.unx
-```
-
-Запустить тесты:
-
-```shell
-make -f makefile.unx test
-```
-
-Очистить проект:
-
-```shell
-make -f makefile.unx clean
-```
-
-### Windows
+<table>
+  <tr>
+    <th></th>
+    <th>Linux</th>
+    <th>Windows <br>(MS Visual Studio C)</th>
+    <th>Windows<br>(MinGW32)</th>
+    <th>Windows<br>(MinGW64)</th>
+  </tr>
+  <tr>
+    <td>Перейти в папку с исходниками:</td>
+    <td colspan="4"><pre><code class="language-shell">cd sources/emulator</code></pre></td>
+   </tr>
+   <tr>
+     <td>Собрать исполняемые файлы:</td>
+     <td><pre><code class="language-bash">make -f makefile.unx</code></pre> </td>
+     <td><pre><code class="language-batch">build_win</code></pre></td>
+     <td><pre><code class="language-batch"> build_mingw32</code></pre></td>
+     <td><pre><code class="language-batch">build_mingw64</code></pre></td>
+   </tr>
+   <tr>
+     <td>Запустить тесты:</td>
+     <td><pre><code class="language-bash">make -f makefile.unx test</code></pre> </td>
+     <td><pre><code class="language-batch">build_win test</code></pre></td>
+     <td><pre><code class="language-batch"> build_mingw32 test</code></pre></td>
+     <td><pre><code class="language-batch">build_mingw64 test</code></pre></td>
+   </tr>
+   <tr>
+     <td>Очистить проект:</td>
+     <td><pre><code class="language-bash">make -f makefile.unx clean </code></pre></td>
+     <td colspan="3"><pre><code class="language-bash">clean_win </code></pre></td>
+   </tr>
+</table>

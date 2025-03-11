@@ -265,23 +265,23 @@ $(M20ru).exe: $(M20ru_OBJS) $(SIMH_OBJS)
 # Targets (commands)
 
 clean:
-	del $(M20_OBJS)
-	del $(SIMH_OBJS)
-	del $(M20).exe
-	del $(GETOPT).obj
-	del $(CODE2PCARD).obj
-	del $(CODE2PCARD).exe
-	del $(DUMP_DRM).obj
-	del $(DUMP_DRM).exe 
-	del $(DUMP_MT).obj
-	del $(DUMP_MT).exe
-	del $(AUTOCODE_M20).obj
-	del $(AUTOCODE_M20).exe
-	del $(M20ru_OBJS)
-	del $(M20ru).exe
-
-cleanru:
-	del $(M20ru_OBJS)
+	cmd /c del $(M20_OBJS)
+	cmd /c del $(SIMH_OBJS)
+	cmd /c del $(M20).exe
+	cmd /c del $(GETOPT).obj
+	cmd /c del $(CODE2PCARD).obj
+	cmd /c del $(CODE2PCARD).exe
+	cmd /c del $(DUMP_DRM).obj
+	cmd /c del $(DUMP_DRM).exe 
+	cmd /c del $(DUMP_MT).obj
+	cmd /c del $(DUMP_MT).exe
+	cmd /c del $(AUTOCODE_M20).obj
+	cmd /c del $(AUTOCODE_M20).exe
+	cmd /c del $(M20ru_OBJS)
+	cmd /c del $(M20ru).exe
+	       
+cleanru:       
+	cmd /c del $(M20ru_OBJS)
 
 test: 	all
 	..\scripts\run_tests .\m20 ..\complex_test_1963

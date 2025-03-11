@@ -17,7 +17,7 @@ jobs:
         run: |
           make -f makefile.unx test
       - name: Archive test results on failure
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         if: ${{ failure() }}
         with:
           name: linux-test-results
@@ -37,7 +37,7 @@ jobs:
         run: |
           .\build_mingw64.bat test
       - name: Archive test results on failure
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         if: ${{ failure() }}
         with:
           name: mingw-test-results
@@ -59,7 +59,7 @@ jobs:
         run: |
           .\build_win.bat test
       - name: Archive test results on failure
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         if: ${{ failure() }}
         with:
           name: visual-studio-test-results

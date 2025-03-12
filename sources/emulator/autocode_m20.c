@@ -15,6 +15,7 @@
  *  26-Mar-2015  DVS  Minor changes
  *  01-May-2021  DVS  Fixed a bug with data line parsing (bug found by Leonid Yadrennikov).
  *  01-Jun-2023  LOY  INCLUDE directive support (for Windows).
+ *  12-Mar-2025  LOY  More thorough strcasestr definition checking for modern GCC
  *
  */
 
@@ -313,8 +314,17 @@ strncasecmp(s1, s2, n)
 #endif
 
 
+//bulky test to please all compilers
+#define BUILTIN_STRCASESTR 0
+#ifdef __has_builtin
+    #ifdef __builtin_strcasestr
+       #undef BUILTIN_STRCASESTR
+       #define BUILTIN_STRCASESTR __has_builtin(__builtin_strcasestr)
+    #endif
+#endif  
 
-#if !defined(strcasestr) && !defined(__FreeBSD__)
+#if !(defined(strcasestr) || BUILTIN_STRCASESTR || \
+      (defined(__GNUC__) && !defined(__FreeBSD__))) 
 static char * strcasestr( const char * big, const char * little );
 
 /*-

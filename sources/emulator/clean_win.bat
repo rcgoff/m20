@@ -1,5 +1,5 @@
 @echo off
-nmake 1>NUL 2>NUL
+nmake /? 1>NUL 2>NUL
 if ERRORLEVEL 1 goto mingw
 nmake -f makefile.win clean
 goto common_end

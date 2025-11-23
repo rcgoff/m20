@@ -1513,7 +1513,8 @@ void  parse_input_assembly_file( PSYM_TABLES  p_sym_tables )
                    this_addr = 0;
                    s = parsed_lines_array[i].lexical_word_array[j].lex_word_value;
                    t1 = search_abs_value_per_abs_values_table( s );
-                   if (t1 == 0) this_addr = search_sym_value_per_sym_values_table( s );
+                   if (debug_parsing) printf( "%d='%llo';",j,t1);
+                   if (t1 == 0) this_addr = get_addr_by_sym_or_value_or_expr( i, j );
                    else this_addr = (int)t1;
                    this_addr &= MAX_ADDR_VALUE;
                    if (debug_parsing) printf("this_addr=%04o;",this_addr);

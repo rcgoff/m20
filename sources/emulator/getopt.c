@@ -170,7 +170,7 @@ static enum
 /* Avoid depending on library functions or files
    whose names are inconsistent.  */
 
-char *getenv ();
+char *getenv (const char *name);
 
 static char *
 my_index (string, chr)

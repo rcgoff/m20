@@ -16,6 +16,7 @@
  *  01-May-2021  DVS  Fixed a bug with data line parsing (bug found by Leonid Yadrennikov).
  *  01-Jun-2023  LOY  INCLUDE directive support (for Windows).
  *  12-Mar-2025  LOY  More thorough strcasestr definition checking for modern GCC
+ *  29-Nov-2025  LOY  Expressions processing bugfix
  *
  */
 
@@ -929,7 +930,8 @@ int get_addr_by_sym_or_value_or_expr( int i, int k )
      }
   //}
 done:
-  return this_addr;
+//  if (debug_parsing) printf("this_addr_output=%o\n", this_addr);
+  return this_addr & MAX_ADDR_VALUE;
 }
 
 
@@ -1570,18 +1572,21 @@ void  parse_input_assembly_file( PSYM_TABLES  p_sym_tables )
         if (parsed_lines_array[i].lexical_word_array[k].lex_word_num > 0) {
           //printf( "a1s='%s'\n", parsed_lines_array[i].lexical_word_array[k].lex_word_value );
           this_addr = get_addr_by_sym_or_value_or_expr( i, k );
+          if (debug_parsing) printf( "ADDR%d=%o\t", k, this_addr);
           parsed_lines_array[i].obj_code_line.addr_1 = this_addr;
         }
         // address 2
         k++;
         if (parsed_lines_array[i].lexical_word_array[k].lex_word_num > 0) {
           this_addr = get_addr_by_sym_or_value_or_expr( i, k );
+          if (debug_parsing) printf( "ADDR%d=%o\t", k, this_addr);
           parsed_lines_array[i].obj_code_line.addr_2 = this_addr;
         }
         // address 3
         k++;
         if (parsed_lines_array[i].lexical_word_array[k].lex_word_num > 0) {
           this_addr = get_addr_by_sym_or_value_or_expr( i, k );
+          if (debug_parsing) printf( "ADDR%d=%o\n", k, this_addr);
           parsed_lines_array[i].obj_code_line.addr_3 = this_addr;
         }
         m_code = 0;

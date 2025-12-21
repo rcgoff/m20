@@ -91,6 +91,7 @@
  *  06-Jun-2022  LOY  Write to RA by writing to 7776 from SIMH file (cpu_deposit);
  *                    FA fix (modifiers use in the 2nd word)
  *  15-Jun-2023  LOY  Ability to disable B-61 trace.
+ *  21-Dec-2025  LOY  Draft FK command
  */
 
 #include "m20_defs.h"
@@ -2067,8 +2068,29 @@ t_stat ext_io_operation (int a1, t_value * sum)
 }
 
 
+t_value get_fk_operand(int control_digit, int etalon_addr) {
+    //there's a problem: mosu_load argument is int and returning value is t_value
+    t_value fk_operand;
+    switch (control_digit) {
+      case 0: fk_operand = (t_value) etalon_addr; break;
+      case 1: fk_operand = mosu_load(etalon_addr) >> BITS_24 & MAX_ADDR_VALUE; break;
+      case 2: fk_operand = mosu_load(etalon_addr) >> BITS_12 & MAX_ADDR_VALUE; break;
+      case 3: fk_operand = mosu_load(etalon_addr) >> BITS_0  & MAX_ADDR_VALUE; break;
+      case 4: fk_operand = -etalon_addr & MAX_ADDR_VALUE; break;
+      case 5: fk_operand = - (int)(mosu_load(etalon_addr) >> BITS_24) & MAX_ADDR_VALUE; break;
+      case 6: fk_operand = - (int)(mosu_load(etalon_addr) >> BITS_12) & MAX_ADDR_VALUE; break;
+      case 7: fk_operand = - (int)(mosu_load(etalon_addr) >> BITS_0)  & MAX_ADDR_VALUE; break;
+    }
+    return fk_operand;
+}
 
-
+t_value combine_addreses_to_single_word(int a1, int a2, int a3){
+    t_value combined_addr;
+    combined_addr  = (t_value)a3;
+    combined_addr |= (t_value)a2 << BITS_12;
+    combined_addr |= (t_value)a1 << BITS_24;
+    return combined_addr;
+}
 
 /*
  * Execute one instruction, contained in register RK.
@@ -2582,9 +2604,64 @@ shift:
 		fprintf(stderr,"itep_FA5: nextKRA=%04o \n\n",regKRA);
 		if (err) return err;
 		break;
-	} 
+	}
+        case OPCODE_STOP_057:    /* 057 = останов машины, в ИТЭФ-режиме: ФК - формирование команд */
+	if (itep_mode) {
+		t_value etalon_cmd_1,etalon_cmd_2,template1,k,l,m,fk_result;
+		int fk_alpha,fk_beta,fk_gamma,fk_delta,alpha1,alpha2,alpha3,k_addr,l_addr,m_addr;
+		
+		fk_alpha = (a1 & 07000) >> 9;
+		fk_beta  = (a1 & 0700) >> 6;
+		fk_gamma = (a1 & 070) >> 3;
+		fk_delta =  a1 & 07;
+		fprintf(stderr,"itep_FK1: alpha=%1d, beta=%1d, gamma=%1d, delta=%1d\n",fk_alpha,fk_beta,fk_gamma,fk_delta);
+		
+		etalon_cmd_1 = mosu_load (a2);
+		etalon_cmd_2 = mosu_load (regKRA);
+		fprintf(stderr,"itep_FK2: A2=%04o, etalon1=%015llo, updKRA=%04o, etalon2=%015llo\n",a2,etalon_cmd_1,regKRA,etalon_cmd_2);
+		
+		alpha1=!((fk_alpha & 4) >> 2) * MAX_ADDR_VALUE;
+		alpha2=!((fk_alpha & 2) >> 1) * MAX_ADDR_VALUE;
+		alpha3=! (fk_alpha & 1) * MAX_ADDR_VALUE;
+		fprintf(stderr,"itep_FK3: alpha1=%04o, alpha2=%04o, alpha3=%04o\n",alpha1,alpha2,alpha3);
+		
+		template1=combine_addreses_to_single_word(alpha1,alpha2,alpha3);
+ 		etalon_cmd_1 &= template1;
+		fprintf(stderr,"itep_FK4: alpha_template=%015llo, etalon_cmd_1=%015llo\n",template1,etalon_cmd_1);
+
+		k_addr = etalon_cmd_2 >> BITS_24 & MAX_ADDR_VALUE;
+		l_addr = etalon_cmd_2 >> BITS_12 & MAX_ADDR_VALUE;
+		m_addr = etalon_cmd_2 >> BITS_0  & MAX_ADDR_VALUE;
+
+
+		k=get_fk_operand(fk_beta,k_addr);
+		l=get_fk_operand(fk_gamma,l_addr);
+		m=get_fk_operand(fk_delta,m_addr);
+		fprintf(stderr,"itep_FK5: mosu[k_addr]=%015llo, k=%04llo\n",mosu_load(k_addr),k);
+		fprintf(stderr,"itep_FK6: mosu[l_addr]=%015llo, l=%04llo\n",mosu_load(l_addr),l);
+		fprintf(stderr,"itep_FK7: mosu[m_addr]=%015llo, m=%04llo\n",mosu_load(m_addr),m);
+		
+		m += etalon_cmd_1;
+		m &= MAX_ADDR_VALUE;
+		etalon_cmd_1 >>= BITS_12;
+		l += etalon_cmd_1;
+		l &= MAX_ADDR_VALUE;
+		etalon_cmd_1 >>= BITS_12;
+		k += etalon_cmd_1;
+		k &= MAX_ADDR_VALUE;
+		fprintf(stderr,"itep_FK8: k=%04llo, l=%04llo, m=%04llo\n",k,l,m);
+
+		fk_result=combine_addreses_to_single_word((int)k,(int)l,(int)m);
+		fk_result |= (etalon_cmd_2 & EXP_SIGN_TAG);
+		fprintf(stderr,"itep_FK9: fk_result=%015llo\n",fk_result);
+		
+		regKRA +=1;
+		regKRA &= MAX_ADDR_VALUE;
+		mosu_store(a3,fk_result);
+		fprintf(stderr,"\n");
+		break;
+	}		
         case OPCODE_STOP_017:    /* 017 = останов машины */
-        case OPCODE_STOP_057:    /* 057 = останов машины */
 	case OPCODE_STOP_077:    /* 077 = останов машины */
 		delay += 24.0;
 		regRR = 0;
